@@ -2,7 +2,7 @@
 #define ONEPACKET_H
 
 #include <QObject>
-#include <QtSerialPort/qserialport.h>
+#include <QtSerialPort/QSerialPort>
 #include <QByteArray>
 #include <QTimer>
 #include <QMultiMap>

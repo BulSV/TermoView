@@ -104,14 +104,15 @@ Dialog::Dialog(QWidget *parent) :
     this->move(qApp->desktop()->availableGeometry(this).center()-this->rect().center());
 
     // чтобы вызывался деструктор явно!!!
-    if (!testAttribute(Qt::WA_DeleteOnClose))
-        setAttribute(Qt::WA_DeleteOnClose, false);
+//    if (!testAttribute(Qt::WA_DeleteOnClose))
+//        setAttribute(Qt::WA_DeleteOnClose, false);
     // false, чтобы не выдавало ошибку munmap_chunk(): invalid pointer
 
     QStringList portsNames;
 
-    foreach(QSerialPortInfo portsAvailable, QSerialPortInfo::availablePorts()) {
-    portsNames << portsAvailable.portName();
+    foreach(QSerialPortInfo portsAvailable, QSerialPortInfo::availablePorts())
+    {
+        portsNames << portsAvailable.portName();
     }
 
     cbPort->addItems(portsNames);
@@ -150,6 +151,7 @@ Dialog::Dialog(QWidget *parent) :
     connect(bFreqSet, SIGNAL(clicked()), this, SLOT(setFreqFVP()));
     connect(bSetInitialPosition, SIGNAL(clicked()), this, SLOT(InitialPosition()));    
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));   
+    connect(itsOnePacket, SIGNAL(DataIsReaded(bool)), this, SLOT(answer()));
 	
 	QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
@@ -159,6 +161,7 @@ Dialog::~Dialog()
 {
     writeConfigSettings();
     itsTray->setVisible(false);
+    itsPort->close();
 }
 
 void Dialog::openPort()
@@ -171,12 +174,12 @@ void Dialog::openPort()
     itsPort->setFlowControl(QSerialPort::NoFlowControl);
     itsPort->open(QSerialPort::ReadOnly);
 
-    if(itsPort->isOpen()/*itsPort->open(QSerialPort::ReadOnly)*/)
+    if(itsPort->isOpen())
     {        
         itsTray->showMessage(QString::fromUtf8("Information"),
-                             QString::fromUtf8("Port ") +
                              QString(itsPort->portName()) +
-                             QString::fromUtf8(" opened!\n") +
+                             QString::fromUtf8(" port") +
+                             QString::fromUtf8(" is opened!\n") +
                              QString::fromUtf8("Baud rate: ") +
                              QString(QString::number(itsPort->baudRate())) +
                              QString("\n") +
@@ -349,11 +352,11 @@ void Dialog::answer()
 //#if defined (DEBUG)
 //    qDebug() << "void Dialog::answer(bool isNoErrors): recalled =" << recalled;
 //#endif
-//    QFile file;
-//    if((recalled != 0b11111) && file.exists(itsErrorFileName))
-//    {
-//        itsSoundError.play();
-//    }
+    QFile file;
+    if(/*(recalled != 0b11111) && */file.exists(itsErrorFileName))
+    {
+        itsSoundError.play();
+    }
 }
 
 void Dialog::recalledAnswer(int recalled, int statistic)

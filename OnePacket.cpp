@@ -74,7 +74,7 @@ void OnePacket::sendData()
 }
 
 void OnePacket::readData()
-{          
+{    
     if(itsPort->bytesAvailable() > 0 && itsTimeReadDataProcessing->isActive())
     {        
         QByteArray ba;
