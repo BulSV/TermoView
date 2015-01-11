@@ -1,5 +1,5 @@
 greaterThan(QT_MAJOR_VERSION, 4) {
-    QT       += widgets serialport
+    QT       += widgets serialport multimedia
 } else {
     include($$QTSERIALPORT_PROJECT_ROOT/src/serialport/qt4support/serialport.prf)
 }
@@ -36,3 +36,12 @@ else {
 }
 
 RESOURCES += TermoViewIcon.qrc
+
+SOURCES += \
+    main.cpp \
+    Dialog.cpp \
+    OnePacket.cpp
+
+HEADERS += \
+    Dialog.h \
+    OnePacket.h
