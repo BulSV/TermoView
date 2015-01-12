@@ -9,13 +9,9 @@
 #include <QLabel>
 #include <QComboBox>
 #include <QPushButton>
-#include <QSpinBox>
 #include <QGroupBox>
-#include <QtSerialPort/qserialport.h>
-#include <QSettings>
-#include <QMultiMap>
+#include <QtSerialPort/QSerialPort>
 #include <QByteArray>
-#include <QSound>
 #include <QSystemTrayIcon>
 #include "OnePacket.h"
 
@@ -24,40 +20,23 @@ class Dialog : public QDialog
     Q_OBJECT
     QLabel *lPort;
     QComboBox *cbPort;
-    QPushButton *bPortOpen;        
+    QPushButton *bPortOpen;
 
-    QLabel *lFreq;
-    QSpinBox *sbFreq;
-    QPushButton *bFreqSet;
+    QLabel *lLogoPix;
+    QLabel *lCPUTermoPix;
+    QLabel *lSensor1TermoPix;
+    QLabel *lSensor2TermoPix;
 
-    QPushButton *bSetInitialPosition;
+    QLabel *lCPUTermo;
+    QLabel *lSensor1Termo;
+    QLabel *lSensor2Termo;
 
-    QGroupBox *gbInfo;
-
-    QLabel *lSM1;
-    QLabel *lSM2;
-    QLabel *lSM3;
-    QLabel *lSM4;
-    QLabel *lSM5;
-
-    QLabel *lCurrentFreq;
-
-    QLabel *lLogo;
+    QGroupBox *gbCPU;
+    QGroupBox *gbSensor1;
+    QGroupBox *gbSensor2;
 
     QSerialPort *itsPort;
-    OnePacket *itsOnePacket;   
-
-    QString itsConfigFileName;
-    QSettings configSettings; // для файла config.ini
-
-    QMultiMap <int, int> freqStepsMap;
-
-    QByteArray sendData;    
-
-    QString itsErrorFileName;
-    QSound itsSoundError;
-
-    bool itsIsSetInit;
+    OnePacket *itsOnePacket;
 
     QByteArray toWord(int nInt);
     void swapBytes(QByteArray &ba);
@@ -75,14 +54,8 @@ signals:
 
 public slots:
     void openPort();
-    void readSettings();
-    void writeConfigSettings();    
-    void setFreqFVP();
-    void InitialPosition();
-    void send(int mode, int device, int freq);
     void cbPortChanged();
     void answer();
-    void recalledAnswer(int recalled, int statistic);
 };
 
 #endif // DIALOG_H

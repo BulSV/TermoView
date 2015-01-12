@@ -55,7 +55,7 @@ void OnePacket::sendData()
     if(itsCurrentByte == itsPacketLenght)
     {
         itsCurrentByte = 0;
-        itsByteSendTimer->stop();       
+        itsByteSendTimer->stop();
         itsTimeReadDataProcessing->start();
         itsTimeStartRead->start();
 #ifdef DEBUG
@@ -74,9 +74,9 @@ void OnePacket::sendData()
 }
 
 void OnePacket::readData()
-{    
+{
     if(itsPort->bytesAvailable() > 0 && itsTimeReadDataProcessing->isActive())
-    {        
+    {
         QByteArray ba;
         while(itsTimeStartRead->isActive())
         {
@@ -84,12 +84,12 @@ void OnePacket::readData()
 
             if(itsPort->bytesAvailable() > 0)
             {
-                ba.append(itsPort->readAll());                
+                ba.append(itsPort->readAll());
 #ifdef DEBUG
             qDebug() << "ba =" << ba.toHex();
             qDebug() << "itsTimeStartRead->isActive():" << itsTimeStartRead->isActive();
 #endif
-            }            
+            }
         }
 #ifdef DEBUG
         qDebug() << "\n\nvoid OnePacket::readData(): itsPort->readAll() =" << ba.toHex() << QTime::currentTime() << "ms" << QTime::currentTime().msec();
@@ -109,7 +109,7 @@ void OnePacket::readData()
             if((ba.at(index) == itsSendData.at(0)) && (ba.at(itsPacketLenght - 1 + index) == itsSendData.at(itsPacketLenght - 1)))
             {
                 index += itsPacketLenght;
-                ++packet;                
+                ++packet;
 #ifdef DEBUG
                 qDebug() << "void OnePacket::readData(): index =" << index;
                 qDebug() << "void OnePacket::readData(): packet =" << packet;
@@ -174,7 +174,7 @@ void OnePacket::readData()
                 }
             }
         }
-    }    
+    }
 }
 
 // когда нет никакого ответа
@@ -215,7 +215,7 @@ void OnePacket::sendData(QByteArray toSend)
 }
 
 QByteArray OnePacket::getReadData() const
-{    
+{
     return itsReadData;
 }
 
