@@ -20,12 +20,7 @@ class Dialog : public QDialog
     Q_OBJECT
     QLabel *lPort;
     QComboBox *cbPort;
-    QPushButton *bPortOpen;
-
-    QLabel *lLogoPix;
-    QLabel *lCPUTermoPix;
-    QLabel *lSensor1TermoPix;
-    QLabel *lSensor2TermoPix;
+    QPushButton *bPortOpen;  
 
     QLabel *lCPUTermo;
     QLabel *lSensor1Termo;
@@ -38,11 +33,18 @@ class Dialog : public QDialog
     QSerialPort *itsPort;
     OnePacket *itsOnePacket;
 
+    // преобразует word в byte
+    int wordToInt(QByteArray ba);
+    // преобразование byte в word
     QByteArray toWord(int nInt);
+    // меняет байты местами
     void swapBytes(QByteArray &ba);
+    // Преобразует hex вида 000000 в 00 00 00
     QString toHumanHex(QByteArray ba);
+    // Преобразует милисекунды в секунды
     QString mSecToSec(int time);
-    void clearInfo();
+    // определяет температуру
+    float temperature(int temp);
 
     QSystemTrayIcon *itsTray;
 
@@ -55,7 +57,7 @@ signals:
 public slots:
     void openPort();
     void cbPortChanged();
-    void answer();
+    void answer(QByteArray ba);
 };
 
 #endif // DIALOG_H

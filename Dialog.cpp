@@ -1,86 +1,61 @@
 #include "Dialog.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QPixmap>
 #include <QGridLayout>
-#include <QPainter>
-#include <QImage>
 #include <QMessageBox>
 #include <QApplication>
 #include <QFile>
 #include <QDesktopWidget>
-#include <QSystemTrayIcon>
 #include <QShortcut>
 #include <QSerialPortInfo>
 
-#define LOWFREQ 4400
-#define HIGHFREQ 5000
-#define CHANELS 600
+#define STARTBYTE 0x55
+#define STOPBYTE 0xAA
 #define BYTESLENTH 8
+
+#define NEGATIVE 32768 // 2^15
+#define OFFSET 465235
+#define SLOPE 256
+#define FORMAT 'f'
+#define PRECISION 2
 
 Dialog::Dialog(QWidget *parent) :
         QDialog(parent),
         lPort(new QLabel(QString::fromUtf8("Port"), this)),
         cbPort(new QComboBox(this)),
         bPortOpen(new QPushButton(QString::fromUtf8("Open"), this)),
-        lLogoPix(new QLabel(this)),
-        lCPUTermoPix(new QLabel(this)),
-        lSensor1TermoPix(new QLabel(this)),
-        lSensor2TermoPix(new QLabel(this)),
-        lCPUTermo(new QLabel("-50.12", this)),
-        lSensor1Termo(new QLabel("-50.12", this)),
-        lSensor2Termo(new QLabel("-50.12", this)),
+        lCPUTermo(new QLabel("NONE", this)),
+        lSensor1Termo(new QLabel("NONE", this)),
+        lSensor2Termo(new QLabel("NONE", this)),
         gbCPU(new QGroupBox(QString::fromUtf8("CPU"), this)),
         gbSensor1(new QGroupBox(QString::fromUtf8("Sensor 1"), this)),
         gbSensor2(new QGroupBox(QString::fromUtf8("Sensor 2"), this)),
         itsPort(new QSerialPort(this)),
-        itsOnePacket(new OnePacket(itsPort, 5, 8, 1, 250, 300, 0, this)),
+        itsOnePacket(new OnePacket(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
         itsTray (new QSystemTrayIcon(QPixmap(":/TermoViewIcon.png"), this))
 {
-    setLayout(new QVBoxLayout(this));
-
-    // помещаю логотип фирмы
-    QPixmap pixmapLogo(":/elisat.png");
-    lLogoPix->setPixmap(pixmapLogo);
-    lLogoPix->setMaximumSize(60, 16);
-    lLogoPix->setMinimumSize(60, 16);
-    lLogoPix->setScaledContents(true);
-
-    QPixmap pixmapTermo(":/Termo.png");
-    lCPUTermoPix->setPixmap(pixmapTermo);
-    lCPUTermoPix->setMaximumSize(50, 50);
-    lCPUTermoPix->setMinimumSize(50, 50);
-    lCPUTermoPix->setScaledContents(true);
-
-    lSensor1TermoPix->setPixmap(pixmapTermo);
-    lSensor1TermoPix->setMaximumSize(50, 50);
-    lSensor1TermoPix->setMinimumSize(50, 50);
-    lSensor1TermoPix->setScaledContents(true);
-
-    lSensor2TermoPix->setPixmap(pixmapTermo);
-    lSensor2TermoPix->setMaximumSize(50, 50);
-    lSensor2TermoPix->setMinimumSize(50, 50);
-    lSensor2TermoPix->setScaledContents(true);
+    setLayout(new QVBoxLayout(this));    
 
     QGridLayout *grid = new QGridLayout;
     grid->addWidget(lPort, 0, 0);
     grid->addWidget(cbPort, 0, 1);
     grid->addWidget(bPortOpen, 0, 2);
-    grid->addWidget(lLogoPix, 0, 3);
+    // помещаю логотип фирмы
+    grid->addWidget(new QLabel("<img src=':/elisat.png' height='16' width='60'/>", this), 0, 3);
     grid->setSpacing(5);
 
     QVBoxLayout *verCPU = new QVBoxLayout;
-    verCPU->addWidget(lCPUTermoPix, 0, Qt::AlignCenter);
+    verCPU->addWidget(new QLabel("<img src=':/Termo.png' height='50' width='50'/>", this), 0, Qt::AlignCenter);
     verCPU->addWidget(lCPUTermo, 0, Qt::AlignCenter);
     verCPU->setSpacing(5);
 
     QVBoxLayout *verSensor1 = new QVBoxLayout;
-    verSensor1->addWidget(lSensor1TermoPix, 0, Qt::AlignCenter);
+    verSensor1->addWidget(new QLabel("<img src=':/Termo.png' height='50' width='50'/>", this), 0, Qt::AlignCenter);
     verSensor1->addWidget(lSensor1Termo, 0, Qt::AlignCenter);
     verSensor1->setSpacing(5);
 
     QVBoxLayout *verSensor2 = new QVBoxLayout;
-    verSensor2->addWidget(lSensor2TermoPix, 0, Qt::AlignCenter);
+    verSensor2->addWidget(new QLabel("<img src=':/Termo.png' height='50' width='50'/>", this), 0, Qt::AlignCenter);
     verSensor2->addWidget(lSensor2Termo, 0, Qt::AlignCenter);
     verSensor2->setSpacing(5);
 
@@ -123,7 +98,7 @@ Dialog::Dialog(QWidget *parent) :
 
     connect(bPortOpen, SIGNAL(clicked()), this, SLOT(openPort()));
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
-    connect(itsOnePacket, SIGNAL(DataIsReaded(bool)), this, SLOT(answer()));
+    connect(itsOnePacket, SIGNAL(ReadedData(QByteArray)), this, SLOT(answer(QByteArray)));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
@@ -175,9 +150,43 @@ void Dialog::cbPortChanged()
     bPortOpen->setEnabled(true);
 }
 
-void Dialog::answer()
+void Dialog::answer(QByteArray ba)
 {
+    QList<QLabel*> list;
+    list << lCPUTermo << lSensor1Termo << lSensor2Termo;
+    for(int i = 1, k = 0; i < ba.size() - 1; i += 2, ++k) {
+        list[k]->setText(QString::number(temperature(wordToInt(ba.mid(i, 2))), FORMAT, PRECISION));
+#ifdef DEBUG
+        qDebug() << "Temperature[" << k << "] =" << list.at(k)->text();
+#endif
+    }
+}
 
+// преобразует word в byte
+int Dialog::wordToInt(QByteArray ba)
+{
+    if(ba.size() != 2)
+        return -1;
+
+    int temp = ba[0];
+    if(temp < 0)
+    {
+        temp += 0x100; // 256;
+        temp *= 0x100;
+    }
+    else
+        temp = ba[0]*0x100; // старший байт
+
+    int i = ba[1];
+    if(i < 0)
+    {
+        i += 0x100; // 256;
+        temp += i;
+    }
+    else
+        temp += ba[1]; // младший байт
+
+    return temp;
 }
 
 // преобразование byte в word
@@ -228,4 +237,14 @@ QString Dialog::mSecToSec(int time)
     return (QString::number(timeSec) +
             QString::fromUtf8(".") +
             QString::number(timeMSec));
+}
+
+// определяет температуру
+float Dialog::temperature(int temp)
+{
+    if(temp & NEGATIVE) {
+        return -static_cast<float>(qAbs(temp - OFFSET))/SLOPE;
+    } else {
+        return static_cast<float>(temp)/SLOPE;
+    }
 }

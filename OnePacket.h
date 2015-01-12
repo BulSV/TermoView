@@ -4,52 +4,30 @@
 #include <QObject>
 #include <QtSerialPort/QSerialPort>
 #include <QByteArray>
-#include <QTimer>
-#include <QMultiMap>
 
 class OnePacket: public QObject
 {
     Q_OBJECT
     QSerialPort *itsPort;
-    QByteArray itsSendData;
+
     QByteArray itsReadData;
-    int itsNumRecalls;
+
+    int itsStartByte;
+    int itsStopByte;
     int itsPacketLenght;
-    int itsBytesDelay;
-    int itsReadDelay;
-    int itsReadErrorDelay;
-    int itsNumResends;
-    QTimer *itsByteSendTimer;
-    QTimer *itsTimeStartRead;
-    QTimer *itsTimeReadDataProcessing;
-    int itsCurrentByte;
-    int itsCurrentRecall;
-    int itsCurrentResend;
 private slots:
-    void sendData();
     void readData();
-    void wasError();
-    void stopStartReadTimer();
 public slots:
-    void sendData(QByteArray toSend);
     QByteArray getReadData() const;
-    void setToActive(bool isActive);
 signals:
     void DataIsReaded(bool);
-    void DataReadTimeout();
-    void DataIsPreperedToSend(bool);
-    void NextByte(int);
     void ReadedData(QByteArray);
 public:
     OnePacket(QSerialPort *port,
-              int numRecalls = 1,
+              int startByte = 0x55,
+              int stopByte = 0xAA,
               int packetLenght = 8,
-              int bytesDelay = 1,
-              int readDelay = 1,
-              int readErrorDelay = 1000,
-              int numResends = 0,
               QObject *parent = 0);
-    int valueNumRecalls() const;
 };
 
 #endif // ONEPACKET_H
