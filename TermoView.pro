@@ -1,5 +1,5 @@
 greaterThan(QT_MAJOR_VERSION, 4) {
-    QT       += widgets serialport multimedia
+    QT       += widgets serialport
 } else {
     include($$QTSERIALPORT_PROJECT_ROOT/src/serialport/qt4support/serialport.prf)
 }
@@ -32,6 +32,7 @@ else {
     win32:OBJECTS_DIR = ../release/win32/objects
     win32:MOC_DIR = ../release/win32/moc
     win32:RCC_DIR = ../release/win32/moc
+
     TARGET = TermoViewPro
 }
 

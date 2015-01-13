@@ -33,6 +33,7 @@ Dialog::Dialog(QWidget *parent) :
         lBaud(new QLabel(QString::fromUtf8("Baud"), this)),
         cbBaud(new QComboBox(this)),
         bPortOpen(new QPushButton(QString::fromUtf8("Open"), this)),
+        lRx(new QLabel("\tRx\t", this)),
         lCPUTermo(new QLabel("NONE", this)),
         lSensor1Termo(new QLabel("NONE", this)),
         lSensor2Termo(new QLabel("NONE", this)),
@@ -44,9 +45,15 @@ Dialog::Dialog(QWidget *parent) :
         itsPrevCPUTemp(0.0),
         itsPrevSensor1Temp(0.0),
         itsPrevSensor2Temp(0.0),
-        itsTray (new QSystemTrayIcon(QPixmap(":/TermoViewIcon.png"), this))
+        itsTray (new QSystemTrayIcon(QPixmap(":/TermoViewIcon.png"), this)),
+        itsBlinkTime(new QTimer(this))
 {
     setLayout(new QVBoxLayout(this));
+
+    lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
+    lRx->setFrameStyle(QFrame::Box);
+    lRx->setAlignment(Qt::AlignCenter);
+    lRx->setMargin(2);
 
     QGridLayout *grid = new QGridLayout;
     grid->addWidget(lPort, 0, 0);
@@ -54,8 +61,9 @@ Dialog::Dialog(QWidget *parent) :
     grid->addWidget(lBaud, 1, 0);
     grid->addWidget(cbBaud, 1, 1);
     // помещаю логотип фирмы
-    grid->addWidget(new QLabel("<img src=':/elisat.png' height='16' width='60'/>", this), 0, 2);
-    grid->addWidget(bPortOpen, 1, 2);
+    grid->addWidget(new QLabel("<img src=':/elisat.png' height='40' width='150'/>", this), 0, 2, 2, 4);
+    grid->addWidget(bPortOpen, 2, 1);
+    grid->addWidget(lRx, 2, 2, 1, 4, Qt::AlignCenter);
     grid->setSpacing(5);
 
     QVBoxLayout *verCPU = new QVBoxLayout;
@@ -115,11 +123,13 @@ Dialog::Dialog(QWidget *parent) :
 
 
     itsTray->setVisible(true);
+    itsBlinkTime->setInterval(100);
 
     connect(bPortOpen, SIGNAL(clicked()), this, SLOT(openPort()));
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(cbBaud, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(itsOnePacket, SIGNAL(ReadedData(QByteArray)), this, SLOT(answer(QByteArray)));
+    connect(itsBlinkTime, SIGNAL(timeout()), this, SLOT(blinkRx()));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
@@ -187,6 +197,8 @@ void Dialog::cbPortChanged()
 
 void Dialog::answer(QByteArray ba)
 {
+    lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
+    itsBlinkTime->start();
     lCPUTermo->setText(QString::number(tempCorr(tempCPU(wordToInt(ba.mid(1, 2))), CPU), FORMAT, PRECISION));
 
     QList<QLabel*> list;
@@ -335,4 +347,9 @@ float Dialog::tempCorr(float temp, SENSORS sensor)
     }
 
     return prevValue;
+}
+
+void Dialog::blinkRx()
+{
+    lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
 }

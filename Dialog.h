@@ -13,6 +13,7 @@
 #include <QtSerialPort/QSerialPort>
 #include <QByteArray>
 #include <QSystemTrayIcon>
+#include <QTimer>
 #include "OnePacket.h"
 
 class Dialog : public QDialog
@@ -27,6 +28,7 @@ class Dialog : public QDialog
     QLabel *lBaud;
     QComboBox *cbBaud;
     QPushButton *bPortOpen;
+    QLabel *lRx;
 
     QLabel *lCPUTermo;
     QLabel *lSensor1Termo;
@@ -58,20 +60,21 @@ class Dialog : public QDialog
     // определяет температуру кристалла
     float tempCPU(int temp);
     // коррекция скачков температуры
-    float tempCorr(float temp, SENSORS sensor);
+    float tempCorr(float temp, SENSORS sensor);    
 
     QSystemTrayIcon *itsTray;
+    QTimer *itsBlinkTime;
 
-public:
-    explicit Dialog(QWidget *parent = 0);
-    ~Dialog();
-
-signals:
-
-public slots:
+private slots:
     void openPort();
     void cbPortChanged();
     void answer(QByteArray ba);
+    // мигание надписи "Rx" при получении пакета
+    void blinkRx();
+
+public:
+    explicit Dialog(QWidget *parent = 0);
+    ~Dialog();    
 };
 
 #endif // DIALOG_H
