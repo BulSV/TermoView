@@ -3,7 +3,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 } else {
     include($$QTSERIALPORT_PROJECT_ROOT/src/serialport/qt4support/serialport.prf)
 }
-x11:REQUIRES = nas
+
 TEMPLATE = app
 win32:RC_FILE = TermoViewIcon.rc
 #CONFIG += console

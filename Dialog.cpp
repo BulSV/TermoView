@@ -14,8 +14,8 @@
 #define BYTESLENTH 8
 
 #define NEGATIVE 32768 // 2^15
-#define OFFSET 465235
-#define SLOPE 256
+#define OFFSET 45536
+#define SLOPE 128
 #define FORMAT 'f'
 #define PRECISION 2
 
@@ -34,7 +34,7 @@ Dialog::Dialog(QWidget *parent) :
         itsOnePacket(new OnePacket(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
         itsTray (new QSystemTrayIcon(QPixmap(":/TermoViewIcon.png"), this))
 {
-    setLayout(new QVBoxLayout(this));    
+    setLayout(new QVBoxLayout(this));
 
     QGridLayout *grid = new QGridLayout;
     grid->addWidget(lPort, 0, 0);
