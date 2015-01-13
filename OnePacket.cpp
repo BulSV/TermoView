@@ -45,7 +45,7 @@ void OnePacket::readData()
 #ifdef DEBUG
         qDebug() << "ba.size():" << ba.size();
         qDebug() << "ba.at(0):" << ba.at(0);
-        qDebug() << "ba.at(" << itsPacketLenght - 1 << "):" << ba.at(itsPacketLenght - 1);
+//        qDebug() << "ba.at(" << itsPacketLenght - 1 << "):" << ba.at(itsPacketLenght - 1);
 #endif
         while(ba.size() >= itsPacketLenght) {
             while(ba.at(0) != static_cast<char>(itsStartByte)) {

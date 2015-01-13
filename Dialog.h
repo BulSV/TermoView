@@ -47,6 +47,8 @@ class Dialog : public QDialog
     QString mSecToSec(int time);
     // определяет температуру
     float temperature(int temp);
+    // определяет температуру кристалла
+    float tempCPU(int temp);
 
     QSystemTrayIcon *itsTray;
 

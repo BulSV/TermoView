@@ -16,6 +16,13 @@
 #define NEGATIVE 32768 // 2^15
 #define OFFSET 45536
 #define SLOPE 128
+
+#define CPU_FACTOR 0.537
+#define CPU_OFFSET 900
+#define CPU_SLOPE 2.95
+
+#define ACCURACY 0.01
+
 #define FORMAT 'f'
 #define PRECISION 2
 
@@ -177,12 +184,16 @@ void Dialog::cbPortChanged()
 
 void Dialog::answer(QByteArray ba)
 {
+    lCPUTermo->setText(QString::number(tempCPU(wordToInt(ba.mid(1, 2))), FORMAT, PRECISION));
+
     QList<QLabel*> list;
-    list << lCPUTermo << lSensor1Termo << lSensor2Termo;
-    for(int i = 1, k = 0; i < ba.size() - 1; i += 2, ++k) {
+    list << lSensor1Termo << lSensor2Termo;
+
+    for(int i = 3, k = 0; i < ba.size() - 1; i += 2, ++k) {
         list[k]->setText(QString::number(temperature(wordToInt(ba.mid(i, 2))), FORMAT, PRECISION));
 #ifdef DEBUG
         qDebug() << "Temperature[" << k << "] =" << list.at(k)->text();
+        qDebug() << "Temperature CPU =" << lCPUTermo->text();
 #endif
     }
 }
@@ -272,4 +283,10 @@ float Dialog::temperature(int temp)
     } else {
         return static_cast<float>(temp)/SLOPE;
     }
+}
+
+// определяет температуру кристалла
+float Dialog::tempCPU(int temp)
+{
+    return (static_cast<float>(temp*CPU_FACTOR - CPU_OFFSET))/CPU_SLOPE;
 }
