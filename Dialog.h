@@ -18,6 +18,10 @@
 class Dialog : public QDialog
 {
     Q_OBJECT
+    enum SENSORS {
+        CPU, SENSOR1, SENSOR2
+    };
+
     QLabel *lPort;
     QComboBox *cbPort;
     QLabel *lBaud;
@@ -35,6 +39,10 @@ class Dialog : public QDialog
     QSerialPort *itsPort;
     OnePacket *itsOnePacket;
 
+    float itsPrevCPUTemp;
+    float itsPrevSensor1Temp;
+    float itsPrevSensor2Temp;
+
     // преобразует word в byte
     int wordToInt(QByteArray ba);
     // преобразование byte в word
@@ -49,6 +57,8 @@ class Dialog : public QDialog
     float temperature(int temp);
     // определяет температуру кристалла
     float tempCPU(int temp);
+    // коррекция скачков температуры
+    float tempCorr(float temp, SENSORS sensor);
 
     QSystemTrayIcon *itsTray;
 

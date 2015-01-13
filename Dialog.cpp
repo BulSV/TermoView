@@ -21,10 +21,10 @@
 #define CPU_OFFSET 900
 #define CPU_SLOPE 2.95
 
-#define ACCURACY 0.01
+#define ACCURACY 0.1
 
 #define FORMAT 'f'
-#define PRECISION 2
+#define PRECISION 1
 
 Dialog::Dialog(QWidget *parent) :
         QDialog(parent),
@@ -41,6 +41,9 @@ Dialog::Dialog(QWidget *parent) :
         gbSensor2(new QGroupBox(QString::fromUtf8("Sensor 2"), this)),
         itsPort(new QSerialPort(this)),
         itsOnePacket(new OnePacket(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
+        itsPrevCPUTemp(0.0),
+        itsPrevSensor1Temp(0.0),
+        itsPrevSensor2Temp(0.0),
         itsTray (new QSystemTrayIcon(QPixmap(":/TermoViewIcon.png"), this))
 {
     setLayout(new QVBoxLayout(this));
@@ -184,13 +187,13 @@ void Dialog::cbPortChanged()
 
 void Dialog::answer(QByteArray ba)
 {
-    lCPUTermo->setText(QString::number(tempCPU(wordToInt(ba.mid(1, 2))), FORMAT, PRECISION));
+    lCPUTermo->setText(QString::number(tempCorr(tempCPU(wordToInt(ba.mid(1, 2))), CPU), FORMAT, PRECISION));
 
     QList<QLabel*> list;
     list << lSensor1Termo << lSensor2Termo;
 
-    for(int i = 3, k = 0; i < ba.size() - 1; i += 2, ++k) {
-        list[k]->setText(QString::number(temperature(wordToInt(ba.mid(i, 2))), FORMAT, PRECISION));
+    for(int i = 3, k = 0, sensor = static_cast<int>(SENSOR1); i < ba.size() - 1; i += 2, ++k, ++sensor) {
+        list[k]->setText(QString::number(tempCorr(temperature(wordToInt(ba.mid(i, 2))), static_cast<SENSORS>(sensor)), FORMAT, PRECISION));
 #ifdef DEBUG
         qDebug() << "Temperature[" << k << "] =" << list.at(k)->text();
         qDebug() << "Temperature CPU =" << lCPUTermo->text();
@@ -289,4 +292,47 @@ float Dialog::temperature(int temp)
 float Dialog::tempCPU(int temp)
 {
     return (static_cast<float>(temp*CPU_FACTOR - CPU_OFFSET))/CPU_SLOPE;
+}
+
+float Dialog::tempCorr(float temp, SENSORS sensor)
+{
+    float prevValue = 0.0;
+
+    switch (sensor) {
+    case CPU:
+        prevValue = itsPrevCPUTemp;
+        break;
+    case SENSOR1:
+        prevValue = itsPrevSensor1Temp;
+        break;
+    case SENSOR2:
+        prevValue = itsPrevSensor2Temp;
+        break;
+    default:
+        prevValue = itsPrevCPUTemp;
+        break;
+    }
+
+    if(prevValue) {
+        prevValue = prevValue*(1 - ACCURACY) + temp*ACCURACY;
+    } else {
+        prevValue = temp;
+    }
+
+    switch (sensor) {
+    case CPU:
+        itsPrevCPUTemp = prevValue;
+        break;
+    case SENSOR1:
+        itsPrevSensor1Temp = prevValue;
+        break;
+    case SENSOR2:
+        itsPrevSensor2Temp = prevValue;
+        break;
+    default:
+        itsPrevCPUTemp = prevValue;
+        break;
+    }
+
+    return prevValue;
 }
