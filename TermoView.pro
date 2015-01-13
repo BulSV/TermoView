@@ -32,7 +32,7 @@ else {
     win32:OBJECTS_DIR = ../release/win32/objects
     win32:MOC_DIR = ../release/win32/moc
     win32:RCC_DIR = ../release/win32/moc
-    TARGET = TermoViewProd
+    TARGET = TermoViewPro
 }
 
 RESOURCES += TermoViewIcon.qrc

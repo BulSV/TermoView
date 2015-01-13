@@ -23,6 +23,8 @@ Dialog::Dialog(QWidget *parent) :
         QDialog(parent),
         lPort(new QLabel(QString::fromUtf8("Port"), this)),
         cbPort(new QComboBox(this)),
+        lBaud(new QLabel(QString::fromUtf8("Baud"), this)),
+        cbBaud(new QComboBox(this)),
         bPortOpen(new QPushButton(QString::fromUtf8("Open"), this)),
         lCPUTermo(new QLabel("NONE", this)),
         lSensor1Termo(new QLabel("NONE", this)),
@@ -39,9 +41,11 @@ Dialog::Dialog(QWidget *parent) :
     QGridLayout *grid = new QGridLayout;
     grid->addWidget(lPort, 0, 0);
     grid->addWidget(cbPort, 0, 1);
-    grid->addWidget(bPortOpen, 0, 2);
+    grid->addWidget(lBaud, 1, 0);
+    grid->addWidget(cbBaud, 1, 1);
     // помещаю логотип фирмы
-    grid->addWidget(new QLabel("<img src=':/elisat.png' height='16' width='60'/>", this), 0, 3);
+    grid->addWidget(new QLabel("<img src=':/elisat.png' height='16' width='60'/>", this), 0, 2);
+    grid->addWidget(bPortOpen, 1, 2);
     grid->setSpacing(5);
 
     QVBoxLayout *verCPU = new QVBoxLayout;
@@ -94,10 +98,17 @@ Dialog::Dialog(QWidget *parent) :
     cbPort->addItems(portsNames);
     cbPort->setEditable(false);
 
+    QStringList portsBauds;
+    portsBauds << "38400" << "57600" << "115200";
+    cbBaud->addItems(portsBauds);
+    cbPort->setEditable(false);
+
+
     itsTray->setVisible(true);
 
     connect(bPortOpen, SIGNAL(clicked()), this, SLOT(openPort()));
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
+    connect(cbBaud, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(itsOnePacket, SIGNAL(ReadedData(QByteArray)), this, SLOT(answer(QByteArray)));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
@@ -114,14 +125,28 @@ void Dialog::openPort()
 {
     itsPort->close();
     itsPort->setPortName(cbPort->currentText());
-    itsPort->setBaudRate(QSerialPort::Baud38400);
-    itsPort->setDataBits(QSerialPort::Data8);
-    itsPort->setParity(QSerialPort::NoParity);
-    itsPort->setFlowControl(QSerialPort::NoFlowControl);
-    itsPort->open(QSerialPort::ReadOnly);
 
-    if(itsPort->isOpen())
+    if(itsPort->open(QSerialPort::ReadOnly))
     {
+        switch (cbBaud->currentIndex()) {
+        case 0:
+            itsPort->setBaudRate(QSerialPort::Baud38400);
+            break;
+        case 1:
+            itsPort->setBaudRate(QSerialPort::Baud57600);
+            break;
+        case 2:
+            itsPort->setBaudRate(QSerialPort::Baud115200);
+            break;
+        default:
+            itsPort->setBaudRate(QSerialPort::Baud115200);
+            break;
+        }
+
+        itsPort->setDataBits(QSerialPort::Data8);
+        itsPort->setParity(QSerialPort::NoParity);
+        itsPort->setFlowControl(QSerialPort::NoFlowControl);
+
         itsTray->showMessage(QString::fromUtf8("Information"),
                              QString(itsPort->portName()) +
                              QString::fromUtf8(" port") +

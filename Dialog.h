@@ -20,7 +20,9 @@ class Dialog : public QDialog
     Q_OBJECT
     QLabel *lPort;
     QComboBox *cbPort;
-    QPushButton *bPortOpen;  
+    QLabel *lBaud;
+    QComboBox *cbBaud;
+    QPushButton *bPortOpen;
 
     QLabel *lCPUTermo;
     QLabel *lSensor1Termo;
