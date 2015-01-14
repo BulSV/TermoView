@@ -5,13 +5,13 @@
 #include <QApplication>
 #include <QProxyStyle>
 #include "Dialog.h"
-#include <QStyleFactory>
+//#include <QStyleFactory>
 
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);        
 
-    app.setStyle(QStyleFactory::create("motif"));
+//    app.setStyle(QStyleFactory::create("motif"));
 #if defined (Q_OS_UNIX)
     app.setWindowIcon(QIcon(":/TermoViewIcon.png"));
 #endif

@@ -75,7 +75,7 @@ class Dialog : public QDialog
 private slots:
     void openPort();
     void cbPortChanged();
-    void answer(QByteArray ba);
+    void received(QByteArray ba);
     // мигание надписи "Rx" при получении пакета
     void blinkRx();
 

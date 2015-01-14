@@ -25,7 +25,7 @@
 #define ACCURACY 0.1
 
 #define FORMAT 'f'
-#define PRECISION 1
+#define PRECISION 2
 
 Dialog::Dialog(QWidget *parent) :
         QDialog(parent),
@@ -34,7 +34,7 @@ Dialog::Dialog(QWidget *parent) :
         lBaud(new QLabel(QString::fromUtf8("Baud"), this)),
         cbBaud(new QComboBox(this)),
         bPortOpen(new QPushButton(QString::fromUtf8("Open"), this)),
-        lRx(new QLabel("Rx", this)),
+        lRx(new QLabel("   Rx   ", this)),
         lcdCPUTermo(new QLCDNumber(this)),
         lcdSensor1Termo(new QLCDNumber(this)),
         lcdSensor2Termo(new QLCDNumber(this)),
@@ -100,7 +100,7 @@ Dialog::Dialog(QWidget *parent) :
     this->layout()->setSizeConstraint(QLayout::SetFixedSize);
 
     // делаю так, чтобы форма появлялась в центре экрана
-    this->move(qApp->desktop()->availableGeometry(this).center()-this->rect().center());
+//    this->move(qApp->desktop()->availableGeometry(this).center()-this->rect().center());
 
     // чтобы вызывался деструктор явно!!!
 //    if (!testAttribute(Qt::WA_DeleteOnClose))
@@ -130,12 +130,15 @@ Dialog::Dialog(QWidget *parent) :
     list << lcdCPUTermo << lcdSensor1Termo << lcdSensor2Termo;
     foreach(QLCDNumber *lcd, list) {
         lcd->setMinimumSize(80, 40);
+        lcd->setDigitCount(6);
+        lcd->setSegmentStyle(QLCDNumber::Flat);
+        lcd->setFrameStyle(QFrame::NoFrame);
     }
 
     connect(bPortOpen, SIGNAL(clicked()), this, SLOT(openPort()));
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(cbBaud, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
-    connect(itsOnePacket, SIGNAL(ReadedData(QByteArray)), this, SLOT(answer(QByteArray)));
+    connect(itsOnePacket, SIGNAL(ReadedData(QByteArray)), this, SLOT(received(QByteArray)));
     connect(itsBlinkTime, SIGNAL(timeout()), this, SLOT(blinkRx()));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
@@ -202,9 +205,9 @@ void Dialog::cbPortChanged()
     bPortOpen->setEnabled(true);
 }
 
-void Dialog::answer(QByteArray ba)
+void Dialog::received(QByteArray ba)
 {
-    lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
+    lRx->setStyleSheet("background: red; font: bold; font-size: 10pt");
     itsBlinkTime->start();
 
     QList<QLCDNumber*> list;
@@ -223,7 +226,7 @@ void Dialog::answer(QByteArray ba)
 
         setColorLCD(list[k], tempStr.toDouble() > 0.0);
 #ifdef DEBUG
-        qDebug() << "Temperature[" << k << "] =" << list.at(k)->digitCount();
+        qDebug() << "Temperature[" << k << "] =" << list.at(k)->value();
 #endif
     }
 }
@@ -328,12 +331,21 @@ float Dialog::tempCorr(float temp, SENSORS sensor)
     switch (sensor) {
     case CPU:
         prevValue = itsPrevCPUTemp;
+#ifdef DEBUG
+        qDebug() << "In CPU";
+#endif
         break;
     case SENSOR1:
         prevValue = itsPrevSensor1Temp;
+#ifdef DEBUG
+        qDebug() << "In SENSOR1";
+#endif
         break;
     case SENSOR2:
         prevValue = itsPrevSensor2Temp;
+#ifdef DEBUG
+        qDebug() << "In SENSOR2";
+#endif
         break;
     default:
         prevValue = itsPrevCPUTemp;
@@ -349,12 +361,21 @@ float Dialog::tempCorr(float temp, SENSORS sensor)
     switch (sensor) {
     case CPU:
         itsPrevCPUTemp = prevValue;
+#ifdef DEBUG
+        qDebug() << "Out CPU";
+#endif
         break;
     case SENSOR1:
         itsPrevSensor1Temp = prevValue;
+#ifdef DEBUG
+        qDebug() << "Out SENSOR1";
+#endif
         break;
     case SENSOR2:
         itsPrevSensor2Temp = prevValue;
+#ifdef DEBUG
+        qDebug() << "Out SENSOR2";
+#endif
         break;
     default:
         itsPrevCPUTemp = prevValue;
@@ -371,18 +392,18 @@ void Dialog::setColorLCD(QLCDNumber *lcd, bool isHeat)
     palette = lcd->palette();
     if(isHeat) {
         // foreground color
-        palette.setColor(palette.WindowText, QColor(255, 0, 0));
+        palette.setColor(palette.WindowText, QColor(100, 0, 0));
         // "light" border
-        palette.setColor(palette.Light, QColor(255, 0, 0));
+        palette.setColor(palette.Light, QColor(100, 0, 0));
         // "dark" border
-        palette.setColor(palette.Dark, QColor(255, 0, 0));
+        palette.setColor(palette.Dark, QColor(100, 0, 0));
     } else {
         // foreground color
-        palette.setColor(palette.WindowText, QColor(0, 0, 255));
+        palette.setColor(palette.WindowText, QColor(0, 0, 100));
         // "light" border
-        palette.setColor(palette.Light, QColor(0, 0, 255));
+        palette.setColor(palette.Light, QColor(0, 0, 100));
         // "dark" border
-        palette.setColor(palette.Dark, QColor(0, 0, 255));
+        palette.setColor(palette.Dark, QColor(0, 0, 100));
     }
     // set the palette
     lcd->setPalette(palette);
