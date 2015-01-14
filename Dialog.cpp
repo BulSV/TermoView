@@ -8,6 +8,7 @@
 #include <QDesktopWidget>
 #include <QShortcut>
 #include <QSerialPortInfo>
+#include <QPalette>
 
 #define STARTBYTE 0x55
 #define STOPBYTE 0xAA
@@ -33,10 +34,10 @@ Dialog::Dialog(QWidget *parent) :
         lBaud(new QLabel(QString::fromUtf8("Baud"), this)),
         cbBaud(new QComboBox(this)),
         bPortOpen(new QPushButton(QString::fromUtf8("Open"), this)),
-        lRx(new QLabel("\tRx\t", this)),
-        lCPUTermo(new QLabel("NONE", this)),
-        lSensor1Termo(new QLabel("NONE", this)),
-        lSensor2Termo(new QLabel("NONE", this)),
+        lRx(new QLabel("Rx", this)),
+        lcdCPUTermo(new QLCDNumber(this)),
+        lcdSensor1Termo(new QLCDNumber(this)),
+        lcdSensor2Termo(new QLCDNumber(this)),
         gbCPU(new QGroupBox(QString::fromUtf8("CPU"), this)),
         gbSensor1(new QGroupBox(QString::fromUtf8("Sensor 1"), this)),
         gbSensor2(new QGroupBox(QString::fromUtf8("Sensor 2"), this)),
@@ -61,24 +62,24 @@ Dialog::Dialog(QWidget *parent) :
     grid->addWidget(lBaud, 1, 0);
     grid->addWidget(cbBaud, 1, 1);
     // помещаю логотип фирмы
-    grid->addWidget(new QLabel("<img src=':/elisat.png' height='40' width='150'/>", this), 0, 2, 2, 4);
+    grid->addWidget(new QLabel("<img src=':/elisat.png' height='40' width='150'/>", this), 0, 2, 2, 4, Qt::AlignRight);
     grid->addWidget(bPortOpen, 2, 1);
-    grid->addWidget(lRx, 2, 2, 1, 4, Qt::AlignCenter);
+    grid->addWidget(lRx, 2, 2, 1, 4, Qt::AlignRight);
     grid->setSpacing(5);
 
     QVBoxLayout *verCPU = new QVBoxLayout;
     verCPU->addWidget(new QLabel("<img src=':/Termo.png' height='50' width='50'/>", this), 0, Qt::AlignCenter);
-    verCPU->addWidget(lCPUTermo, 0, Qt::AlignCenter);
+    verCPU->addWidget(lcdCPUTermo, 0, Qt::AlignCenter);
     verCPU->setSpacing(5);
 
     QVBoxLayout *verSensor1 = new QVBoxLayout;
     verSensor1->addWidget(new QLabel("<img src=':/Termo.png' height='50' width='50'/>", this), 0, Qt::AlignCenter);
-    verSensor1->addWidget(lSensor1Termo, 0, Qt::AlignCenter);
+    verSensor1->addWidget(lcdSensor1Termo, 0, Qt::AlignCenter);
     verSensor1->setSpacing(5);
 
     QVBoxLayout *verSensor2 = new QVBoxLayout;
     verSensor2->addWidget(new QLabel("<img src=':/Termo.png' height='50' width='50'/>", this), 0, Qt::AlignCenter);
-    verSensor2->addWidget(lSensor2Termo, 0, Qt::AlignCenter);
+    verSensor2->addWidget(lcdSensor2Termo, 0, Qt::AlignCenter);
     verSensor2->setSpacing(5);
 
     gbCPU->setLayout(verCPU);
@@ -124,6 +125,12 @@ Dialog::Dialog(QWidget *parent) :
 
     itsTray->setVisible(true);
     itsBlinkTime->setInterval(100);
+
+    QList<QLCDNumber*> list;
+    list << lcdCPUTermo << lcdSensor1Termo << lcdSensor2Termo;
+    foreach(QLCDNumber *lcd, list) {
+        lcd->setMinimumSize(80, 40);
+    }
 
     connect(bPortOpen, SIGNAL(clicked()), this, SLOT(openPort()));
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
@@ -199,16 +206,24 @@ void Dialog::answer(QByteArray ba)
 {
     lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
     itsBlinkTime->start();
-    lCPUTermo->setText(QString::number(tempCorr(tempCPU(wordToInt(ba.mid(1, 2))), CPU), FORMAT, PRECISION));
 
-    QList<QLabel*> list;
-    list << lSensor1Termo << lSensor2Termo;
+    QList<QLCDNumber*> list;
+    list << lcdCPUTermo << lcdSensor1Termo << lcdSensor2Termo;
 
-    for(int i = 3, k = 0, sensor = static_cast<int>(SENSOR1); i < ba.size() - 1; i += 2, ++k, ++sensor) {
-        list[k]->setText(QString::number(tempCorr(temperature(wordToInt(ba.mid(i, 2))), static_cast<SENSORS>(sensor)), FORMAT, PRECISION));
+    QString tempStr;
+
+    for(int i = 1, k = 0, sensor = static_cast<int>(CPU); i < ba.size() - 1; i += 2, ++k, ++sensor) {
+        if(sensor != static_cast<int>(CPU)) {
+            tempStr = QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))), static_cast<SENSORS>(sensor)), FORMAT, PRECISION);
+        } else {
+            tempStr = QString::number(tempCorr(tempCPU(wordToInt(ba.mid(i, 2))), CPU), FORMAT, PRECISION);
+
+        }
+        list[k]->display(tempStr.toDouble());
+
+        setColorLCD(list[k], tempStr.toDouble() > 0.0);
 #ifdef DEBUG
-        qDebug() << "Temperature[" << k << "] =" << list.at(k)->text();
-        qDebug() << "Temperature CPU =" << lCPUTermo->text();
+        qDebug() << "Temperature[" << k << "] =" << list.at(k)->digitCount();
 #endif
     }
 }
@@ -291,7 +306,7 @@ QString Dialog::mSecToSec(int time)
 }
 
 // определяет температуру
-float Dialog::temperature(int temp)
+float Dialog::tempSensors(int temp)
 {
     if(temp & NEGATIVE) {
         return -static_cast<float>(qAbs(temp - OFFSET))/SLOPE;
@@ -347,6 +362,30 @@ float Dialog::tempCorr(float temp, SENSORS sensor)
     }
 
     return prevValue;
+}
+
+void Dialog::setColorLCD(QLCDNumber *lcd, bool isHeat)
+{
+    QPalette palette;
+    // get the palette
+    palette = lcd->palette();
+    if(isHeat) {
+        // foreground color
+        palette.setColor(palette.WindowText, QColor(255, 0, 0));
+        // "light" border
+        palette.setColor(palette.Light, QColor(255, 0, 0));
+        // "dark" border
+        palette.setColor(palette.Dark, QColor(255, 0, 0));
+    } else {
+        // foreground color
+        palette.setColor(palette.WindowText, QColor(0, 0, 255));
+        // "light" border
+        palette.setColor(palette.Light, QColor(0, 0, 255));
+        // "dark" border
+        palette.setColor(palette.Dark, QColor(0, 0, 255));
+    }
+    // set the palette
+    lcd->setPalette(palette);
 }
 
 void Dialog::blinkRx()
