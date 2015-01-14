@@ -220,9 +220,13 @@ void Dialog::received(QByteArray ba)
             tempStr = QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))), static_cast<SENSORS>(sensor)), FORMAT, PRECISION);
         } else {
             tempStr = QString::number(tempCorr(tempCPU(wordToInt(ba.mid(i, 2))), CPU), FORMAT, PRECISION);
-
         }
-        list[k]->display(tempStr.toDouble());
+        if(list.at(k)->digitCount() < addTrailingZeros(tempStr, PRECISION).size())
+        {
+            list[k]->display("ERR"); // Overflow
+        } else {
+            list[k]->display(addTrailingZeros(tempStr, PRECISION));
+        }
 
         setColorLCD(list[k], tempStr.toDouble() > 0.0);
 #ifdef DEBUG
@@ -407,6 +411,27 @@ void Dialog::setColorLCD(QLCDNumber *lcd, bool isHeat)
     }
     // set the palette
     lcd->setPalette(palette);
+}
+
+QString &Dialog::addTrailingZeros(QString &str, int prec)
+{
+    if(str.isEmpty() || prec < 1) { // if prec == 0 then it's no sense
+        return str;
+    }
+
+    int pointIndex = str.indexOf(".");
+    if(pointIndex == -1) {
+        str.append(".");
+        pointIndex = str.size() - 1;
+    }
+
+    if(str.size() - 1 - pointIndex < prec) {
+        for(int i = 0; i < prec - (str.size() - 1 - pointIndex); ++i) {
+            str.append("0");
+        }
+    }
+
+    return str;
 }
 
 void Dialog::blinkRx()

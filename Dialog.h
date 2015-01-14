@@ -31,10 +31,6 @@ class Dialog : public QDialog
     QPushButton *bPortOpen;
     QLabel *lRx;
 
-//    QLabel *lCPUTermo;
-//    QLabel *lSensor1Termo;
-//    QLabel *lSensor2Termo;
-
     QLCDNumber *lcdCPUTermo;
     QLCDNumber *lcdSensor1Termo;
     QLCDNumber *lcdSensor2Termo;
@@ -68,6 +64,8 @@ class Dialog : public QDialog
     float tempCorr(float temp, SENSORS sensor);
     // цвет индикации температуры >0 & <=0
     void setColorLCD(QLCDNumber *lcd, bool isHeat);
+    // добавляет завершающие нули
+    QString &addTrailingZeros(QString &str, int prec);
 
     QSystemTrayIcon *itsTray;
     QTimer *itsBlinkTime;
