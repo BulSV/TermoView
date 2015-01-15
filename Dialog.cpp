@@ -15,7 +15,7 @@
 #define BYTESLENTH 8
 
 #define NEGATIVE 32768 // 2^15
-#define OFFSET 45536
+#define OFFSET 65536 // 2^16
 #define SLOPE 128
 
 #define CPU_FACTOR 0.537
