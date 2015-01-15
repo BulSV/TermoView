@@ -33,8 +33,9 @@ Dialog::Dialog(QWidget *parent) :
         cbPort(new QComboBox(this)),
         lBaud(new QLabel(QString::fromUtf8("Baud"), this)),
         cbBaud(new QComboBox(this)),
-        bPortOpen(new QPushButton(QString::fromUtf8("Open"), this)),
-        lRx(new QLabel("   Rx   ", this)),
+        bPortStart(new QPushButton(QString::fromUtf8("Start"), this)),
+        bPortStop(new QPushButton(QString::fromUtf8("Stop"), this)),
+        lRx(new QLabel("          Rx          ", this)),
         lcdCPUTermo(new QLCDNumber(this)),
         lcdSensor1Termo(new QLCDNumber(this)),
         lcdSensor2Termo(new QLCDNumber(this)),
@@ -51,7 +52,7 @@ Dialog::Dialog(QWidget *parent) :
 {
     setLayout(new QVBoxLayout(this));
 
-    lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
+    lRx->setStyleSheet("background: red; font: bold; font-size: 10pt");
     lRx->setFrameStyle(QFrame::Box);
     lRx->setAlignment(Qt::AlignCenter);
     lRx->setMargin(2);
@@ -63,7 +64,8 @@ Dialog::Dialog(QWidget *parent) :
     grid->addWidget(cbBaud, 1, 1);
     // помещаю логотип фирмы
     grid->addWidget(new QLabel("<img src=':/elisat.png' height='40' width='150'/>", this), 0, 2, 2, 4, Qt::AlignRight);
-    grid->addWidget(bPortOpen, 2, 1);
+    grid->addWidget(bPortStart, 2, 1);
+    grid->addWidget(bPortStop, 2, 2);
     grid->addWidget(lRx, 2, 2, 1, 4, Qt::AlignRight);
     grid->setSpacing(5);
 
@@ -113,7 +115,7 @@ Dialog::Dialog(QWidget *parent) :
     portsBauds << "115200" << "57600" << "38400";
     cbBaud->addItems(portsBauds);
     cbPort->setEditable(false);
-
+    bPortStop->setEnabled(false);
 
     itsTray->setVisible(true);
     itsBlinkTime->setInterval(100);
@@ -127,7 +129,8 @@ Dialog::Dialog(QWidget *parent) :
         lcd->setFrameStyle(QFrame::NoFrame);
     }
 
-    connect(bPortOpen, SIGNAL(clicked()), this, SLOT(openPort()));
+    connect(bPortStart, SIGNAL(clicked()), this, SLOT(openPort()));
+    connect(bPortStop, SIGNAL(clicked()), this, SLOT(closePort()));
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(cbBaud, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(itsOnePacket, SIGNAL(ReadedData(QByteArray)), this, SLOT(received(QByteArray)));
@@ -152,13 +155,13 @@ void Dialog::openPort()
     {
         switch (cbBaud->currentIndex()) {
         case 0:
-            itsPort->setBaudRate(QSerialPort::Baud38400);
+            itsPort->setBaudRate(QSerialPort::Baud115200);
             break;
         case 1:
             itsPort->setBaudRate(QSerialPort::Baud57600);
             break;
         case 2:
-            itsPort->setBaudRate(QSerialPort::Baud115200);
+            itsPort->setBaudRate(QSerialPort::Baud38400);
             break;
         default:
             itsPort->setBaudRate(QSerialPort::Baud115200);
@@ -181,7 +184,8 @@ void Dialog::openPort()
                              QString("\n") +
                              QString::fromUtf8("Parity: ") +
                              QString(QString::number(itsPort->parity())));
-        bPortOpen->setEnabled(false);
+        bPortStart->setEnabled(false);
+        bPortStop->setEnabled(true);
     }
     else
     {
@@ -192,14 +196,24 @@ void Dialog::openPort()
     }
 }
 
+void Dialog::closePort()
+{
+    itsPort->close();
+    itsBlinkTime->stop();
+    lRx->setStyleSheet("background: red; font: bold; font-size: 10pt");
+    bPortStop->setEnabled(false);
+    bPortStart->setEnabled(true);
+}
+
 void Dialog::cbPortChanged()
 {
-    bPortOpen->setEnabled(true);
+    bPortStart->setEnabled(true);
+    bPortStop->setEnabled(false);
 }
 
 void Dialog::received(QByteArray ba)
 {
-    lRx->setStyleSheet("background: red; font: bold; font-size: 10pt");
+    lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
     itsBlinkTime->start();
 
     QList<QLCDNumber*> list;

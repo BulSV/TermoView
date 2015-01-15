@@ -28,7 +28,8 @@ class Dialog : public QDialog
     QComboBox *cbPort;
     QLabel *lBaud;
     QComboBox *cbBaud;
-    QPushButton *bPortOpen;
+    QPushButton *bPortStart;
+    QPushButton *bPortStop;
     QLabel *lRx;
 
     QLCDNumber *lcdCPUTermo;
@@ -72,6 +73,7 @@ class Dialog : public QDialog
 
 private slots:
     void openPort();
+    void closePort();
     void cbPortChanged();
     void received(QByteArray ba);
     // мигание надписи "Rx" при получении пакета
