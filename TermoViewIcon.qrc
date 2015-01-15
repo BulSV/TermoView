@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>elisat.png</file>
-        <file>TermoViewIcon.png</file>
         <file>Termo.png</file>
     </qresource>
 </RCC>

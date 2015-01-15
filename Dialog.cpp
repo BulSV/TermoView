@@ -46,7 +46,7 @@ Dialog::Dialog(QWidget *parent) :
         itsPrevCPUTemp(0.0),
         itsPrevSensor1Temp(0.0),
         itsPrevSensor2Temp(0.0),
-        itsTray (new QSystemTrayIcon(QPixmap(":/TermoViewIcon.png"), this)),
+        itsTray (new QSystemTrayIcon(QPixmap(":/Termo.png"), this)),
         itsBlinkTime(new QTimer(this))
 {
     setLayout(new QVBoxLayout(this));
@@ -99,14 +99,6 @@ Dialog::Dialog(QWidget *parent) :
     // делает окно фиксированного размера
     this->layout()->setSizeConstraint(QLayout::SetFixedSize);
 
-    // делаю так, чтобы форма появлялась в центре экрана
-//    this->move(qApp->desktop()->availableGeometry(this).center()-this->rect().center());
-
-    // чтобы вызывался деструктор явно!!!
-//    if (!testAttribute(Qt::WA_DeleteOnClose))
-//        setAttribute(Qt::WA_DeleteOnClose, false);
-    // false, чтобы не выдавало ошибку munmap_chunk(): invalid pointer
-
     QStringList portsNames;
 
     foreach(QSerialPortInfo portsAvailable, QSerialPortInfo::availablePorts())
@@ -118,7 +110,7 @@ Dialog::Dialog(QWidget *parent) :
     cbPort->setEditable(false);
 
     QStringList portsBauds;
-    portsBauds << "38400" << "57600" << "115200";
+    portsBauds << "115200" << "57600" << "38400";
     cbBaud->addItems(portsBauds);
     cbPort->setEditable(false);
 
