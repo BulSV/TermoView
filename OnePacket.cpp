@@ -25,10 +25,13 @@ OnePacket::OnePacket(QSerialPort *port,
 void OnePacket::readData()
 {
     QByteArray ba;
+#ifdef DEBUG
+        qDebug() << "[void OnePacket::readData()] ||| ba.size():" << ba.size();
+#endif
 
     if(itsPort->bytesAvailable() > itsPacketLenght - 1)
     {
-        ba.append(itsPort->read(itsPacketLenght));
+        ba.append(itsPort->readAll());
 #ifdef DEBUG
         qDebug() << "ba =" << ba.toHex();
         qDebug() << "ba.size():" << ba.size();
@@ -45,8 +48,7 @@ void OnePacket::readData()
             emit ReadedData(ba);
 
         }
-    }
-    ba.clear();
+    }    
 }
 
 QByteArray OnePacket::getReadData() const

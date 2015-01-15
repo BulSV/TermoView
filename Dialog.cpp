@@ -213,6 +213,10 @@ void Dialog::cbPortChanged()
 
 void Dialog::received(QByteArray ba)
 {
+    if(ba.size() > BYTESLENTH) { // ignore packets that don't match the size of the established protocol
+        return;
+    }
+
     lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
     itsBlinkTime->start();
 
@@ -221,7 +225,7 @@ void Dialog::received(QByteArray ba)
 
     QString tempStr;
 
-    for(int i = 1, k = 0, sensor = static_cast<int>(CPU); i < ba.size() - 1; i += 2, ++k, ++sensor) {
+    for(int i = 1, k = 0, sensor = static_cast<int>(CPU); i < BYTESLENTH - 1; i += 2, ++k, ++sensor) {
         if(sensor != static_cast<int>(CPU)) {
             tempStr = QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))), static_cast<SENSORS>(sensor)), FORMAT, PRECISION);
         } else {
