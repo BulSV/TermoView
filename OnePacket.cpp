@@ -24,31 +24,35 @@ OnePacket::OnePacket(QSerialPort *port,
 
 void OnePacket::readData()
 {
-    QByteArray ba;
 #ifdef DEBUG
-        qDebug() << "[void OnePacket::readData()] ||| ba.size():" << ba.size();
+        qDebug() << "[void OnePacket::readData()] ||| ba.size():" << itsReadData.size();
 #endif
 
     if(itsPort->bytesAvailable() > itsPacketLenght - 1)
     {
-        ba.append(itsPort->readAll());
+        itsReadData.append(itsPort->readAll());
 #ifdef DEBUG
-        qDebug() << "ba =" << ba.toHex();
-        qDebug() << "ba.size():" << ba.size();
-        qDebug() << "ba.at(0):" << ba.at(0);
-        qDebug() << "ba.at(" << itsPacketLenght - 1 << "):" << ba.at(itsPacketLenght - 1);
+        qDebug() << "ba =" << itsReadData.toHex();
+        qDebug() << "ba.size():" << itsReadData.size();
+        qDebug() << "ba.at(0):" << itsReadData.at(0);
+        qDebug() << "ba.at(" << itsPacketLenght - 1 << "):" << itsReadData.at(itsPacketLenght - 1);
 #endif
 
-        if(ba.at(0) == static_cast<char>(itsStartByte)
-                && ba.at(itsPacketLenght - 1) == static_cast<char>(itsStopByte))
+        if(itsReadData.at(0) == static_cast<char>(itsStartByte)
+                && itsReadData.at(itsPacketLenght - 1) == static_cast<char>(itsStopByte))
         {
 #ifdef DEBUG
-            qDebug() << "emit ReadedData(ba):" << ba.toHex();
+            qDebug() << "emit ReadedData(ba):" << itsReadData.toHex();
 #endif
-            emit ReadedData(ba);
+            emit DataIsReaded(true);
+            emit ReadedData(itsReadData);
 
+        } else {
+            emit DataIsReaded(false);
         }
-    }    
+    }
+
+    itsReadData.clear();
 }
 
 QByteArray OnePacket::getReadData() const
