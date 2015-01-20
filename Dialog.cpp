@@ -213,6 +213,10 @@ void Dialog::cbPortChanged()
 
 void Dialog::received(QByteArray ba)
 {
+#ifdef DEBUG
+        qDebug() << "void Dialog::received(QByteArray ba) ||| ba =" << ba.toHex();
+        qDebug() << "void Dialog::received(QByteArray ba) ||| ba.size():" << ba.size();
+#endif
     if(ba.size() > BYTESLENTH) { // ignore packets that don't match the size of the established protocol
         return;
     }

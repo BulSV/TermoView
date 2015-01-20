@@ -15,9 +15,11 @@ OnePacket::OnePacket(QSerialPort *port,
       itsPort(port),
       itsStartByte(startByte),
       itsStopByte(stopByte),
-      itsPacketLenght(packetLenght)
+      itsPacketLenght(packetLenght),
+      m_counter(0)
 {
     itsReadData.clear();
+    itsPort->setReadBufferSize(1); // for reading 1 byte at a time
 
     connect(itsPort, SIGNAL(readyRead()), this, SLOT(readData()));
 }
@@ -25,34 +27,51 @@ OnePacket::OnePacket(QSerialPort *port,
 void OnePacket::readData()
 {
 #ifdef DEBUG
+        qDebug() << "[void OnePacket::readData()] ||| itsPort->bytesAvailable():" << itsPort->bytesAvailable();
         qDebug() << "[void OnePacket::readData()] ||| ba.size():" << itsReadData.size();
 #endif
+    QByteArray buffer;
 
-    if(itsPort->bytesAvailable() > itsPacketLenght - 1)
-    {
-        itsReadData.append(itsPort->readAll());
+    if(itsPort->bytesAvailable() > 0) {
+        buffer.append(itsPort->read(1));
+
 #ifdef DEBUG
+        qDebug() << "buffer =" << buffer.toHex();
         qDebug() << "ba =" << itsReadData.toHex();
         qDebug() << "ba.size():" << itsReadData.size();
-        qDebug() << "ba.at(0):" << itsReadData.at(0);
-        qDebug() << "ba.at(" << itsPacketLenght - 1 << "):" << itsReadData.at(itsPacketLenght - 1);
 #endif
-
-        if(itsReadData.at(0) == static_cast<char>(itsStartByte)
-                && itsReadData.at(itsPacketLenght - 1) == static_cast<char>(itsStopByte))
-        {
+        if(!m_counter && buffer.at(0) == static_cast<char>(itsStartByte)) {
 #ifdef DEBUG
-            qDebug() << "emit ReadedData(ba):" << itsReadData.toHex();
+            qDebug() << "BEGIN";
 #endif
-            emit DataIsReaded(true);
-            emit ReadedData(itsReadData);
+            itsReadData.append(buffer);
+            ++m_counter;
+        } else if(m_counter && m_counter < itsPacketLenght) {
+#ifdef DEBUG
+            qDebug() << "CONTINUE";
+#endif
+            itsReadData.append(buffer);
+            ++m_counter;
 
+            if((m_counter == itsPacketLenght)
+                    && itsReadData.at(itsPacketLenght - 1) == static_cast<char>(itsStopByte)) {
+#ifdef DEBUG
+                qDebug() << "emit ReadedData(ba):" << itsReadData.toHex();
+                qDebug() << "RECEIVED";
+#endif
+                emit DataIsReaded(true);
+                emit ReadedData(itsReadData);
+
+                itsReadData.clear();
+                m_counter = 0;
+            }
         } else {
             emit DataIsReaded(false);
+
+            itsReadData.clear();
+            m_counter = 0;
         }
     }
-
-    itsReadData.clear();
 }
 
 QByteArray OnePacket::getReadData() const

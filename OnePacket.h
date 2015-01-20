@@ -15,6 +15,7 @@ class OnePacket: public QObject
     int itsStartByte;
     int itsStopByte;
     int itsPacketLenght;
+    int m_counter;
 private slots:
     void readData();
 public slots:
