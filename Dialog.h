@@ -47,6 +47,8 @@ class Dialog : public QDialog
     float itsPrevSensor1Temp;
     float itsPrevSensor2Temp;
 
+    QStringList itsTempSensorsList;
+
     // преобразует word в byte
     int wordToInt(QByteArray ba);
     // преобразование byte в word
@@ -70,6 +72,7 @@ class Dialog : public QDialog
 
     QSystemTrayIcon *itsTray;
     QTimer *itsBlinkTime;
+    QTimer *itsTimeToDisplay;
 
 private slots:
     void openPort();
@@ -78,6 +81,7 @@ private slots:
     void received(QByteArray ba);
     // мигание надписи "Rx" при получении пакета
     void blinkRx();
+    void display();
 
 public:
     explicit Dialog(QWidget *parent = 0);

@@ -48,7 +48,8 @@ Dialog::Dialog(QWidget *parent) :
         itsPrevSensor1Temp(0.0),
         itsPrevSensor2Temp(0.0),
         itsTray (new QSystemTrayIcon(QPixmap(":/Termo.png"), this)),
-        itsBlinkTime(new QTimer(this))
+        itsBlinkTime(new QTimer(this)),
+        itsTimeToDisplay(new QTimer(this))
 {
     setLayout(new QVBoxLayout(this));
 
@@ -118,7 +119,8 @@ Dialog::Dialog(QWidget *parent) :
     bPortStop->setEnabled(false);
 
     itsTray->setVisible(true);
-    itsBlinkTime->setInterval(100);
+    itsBlinkTime->setInterval(500);
+    itsTimeToDisplay->setInterval(500);
 
     QList<QLCDNumber*> list;
     list << lcdCPUTermo << lcdSensor1Termo << lcdSensor2Termo;
@@ -135,6 +137,7 @@ Dialog::Dialog(QWidget *parent) :
     connect(cbBaud, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(itsOnePacket, SIGNAL(ReadedData(QByteArray)), this, SLOT(received(QByteArray)));
     connect(itsBlinkTime, SIGNAL(timeout()), this, SLOT(blinkRx()));
+    connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(display()));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
@@ -222,30 +225,20 @@ void Dialog::received(QByteArray ba)
     }
 
     lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
-    itsBlinkTime->start();
+    if(!itsBlinkTime->isActive()) {
+        itsBlinkTime->start();
+    }
 
-    QList<QLCDNumber*> list;
-    list << lcdCPUTermo << lcdSensor1Termo << lcdSensor2Termo;
+    if(!itsTimeToDisplay->isActive()) {
+        itsTimeToDisplay->start();
+    }
 
-    QString tempStr;
-
-    for(int i = 1, k = 0, sensor = static_cast<int>(CPU); i < BYTESLENTH - 1; i += 2, ++k, ++sensor) {
+    for(int i = 1, sensor = static_cast<int>(CPU); i < BYTESLENTH - 1; i += 2, ++sensor) {
         if(sensor != static_cast<int>(CPU)) {
-            tempStr = QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))), static_cast<SENSORS>(sensor)), FORMAT, PRECISION);
+            itsTempSensorsList.append(QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))), static_cast<SENSORS>(sensor)), FORMAT, PRECISION));
         } else {
-            tempStr = QString::number(tempCPU(wordToInt(ba.mid(i, 2)), CPU), FORMAT, PRECISION);
+            itsTempSensorsList.append(QString::number(tempCPU(wordToInt(ba.mid(i, 2))), FORMAT, PRECISION));
         }
-        if(list.at(k)->digitCount() < addTrailingZeros(tempStr, PRECISION).size())
-        {
-            list[k]->display("ERR"); // Overflow
-        } else {
-            list[k]->display(addTrailingZeros(tempStr, PRECISION));
-        }
-
-        setColorLCD(list[k], tempStr.toDouble() > 0.0);
-#ifdef DEBUG
-        qDebug() << "Temperature[" << k << "] =" << list.at(k)->value();
-#endif
     }
 }
 
@@ -451,4 +444,33 @@ QString &Dialog::addTrailingZeros(QString &str, int prec)
 void Dialog::blinkRx()
 {
     lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
+    itsBlinkTime->stop();
+}
+
+void Dialog::display()
+{
+    itsTimeToDisplay->stop();
+
+    QList<QLCDNumber*> list;
+    list << lcdSensor2Termo << lcdSensor1Termo << lcdCPUTermo;
+    QString tempStr;
+
+    for(int k = 0; k < list.size(); ++k) {
+        tempStr = itsTempSensorsList.at(itsTempSensorsList.size() - 1 - k);
+
+        if(list.at(k)->digitCount() < addTrailingZeros(tempStr, PRECISION).size())
+        {
+            list[k]->display("ERR"); // Overflow
+        } else {
+            list[k]->display(addTrailingZeros(tempStr, PRECISION));
+        }
+
+        setColorLCD(list[k], tempStr.toDouble() > 0.0);
+#ifdef DEBUG
+        qDebug() << "itsTempSensorsList.size() =" << itsTempSensorsList.size();
+        qDebug() << "Temperature[" << k << "] =" << list.at(k)->value();
+#endif
+    }
+
+    itsTempSensorsList.clear();
 }
