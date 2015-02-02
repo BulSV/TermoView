@@ -22,7 +22,7 @@
 #define CPU_OFFSET 900
 #define CPU_SLOPE 2.95
 
-#define ACCURACY 0.05
+#define ACCURACY 0.02
 
 #define FORMAT 'f'
 #define PRECISION 2
@@ -47,6 +47,9 @@ Dialog::Dialog(QWidget *parent) :
         itsPrevCPUTemp(0.0),
         itsPrevSensor1Temp(0.0),
         itsPrevSensor2Temp(0.0),
+        itsWasPrevCPUTemp(false),
+        itsWasPrevSensor1Temp(false),
+        itsWasPrevSensor2Temp(false),
         itsTray (new QSystemTrayIcon(QPixmap(":/Termo.png"), this)),
         itsBlinkTimeNone(new QTimer(this)),
         itsBlinkTimeColor(new QTimer(this)),
@@ -210,6 +213,9 @@ void Dialog::closePort()
     lRx->setStyleSheet("background: red; font: bold; font-size: 10pt");
     bPortStop->setEnabled(false);
     bPortStart->setEnabled(true);
+    itsWasPrevCPUTemp = false;
+    itsWasPrevSensor1Temp = false;
+    itsWasPrevSensor2Temp = false;
 }
 
 void Dialog::cbPortChanged()
@@ -241,7 +247,7 @@ void Dialog::received(QByteArray ba)
         if(sensor != static_cast<int>(CPU)) {
             itsTempSensorsList.append(QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))), static_cast<SENSORS>(sensor)), FORMAT, PRECISION));
         } else {
-            itsTempSensorsList.append(QString::number(tempCPU(wordToInt(ba.mid(i, 2))), FORMAT, PRECISION));
+            itsTempSensorsList.append(QString::number(tempCorr(tempCPU(wordToInt(ba.mid(i, 2))), CPU), FORMAT, PRECISION));
         }
     }
 }
@@ -342,32 +348,37 @@ float Dialog::tempCPU(int temp)
 float Dialog::tempCorr(float temp, SENSORS sensor)
 {
     float prevValue = 0.0;
+    bool wasPrev = false;
 
     switch (sensor) {
     case CPU:
         prevValue = itsPrevCPUTemp;
+        wasPrev = itsWasPrevCPUTemp;
 #ifdef DEBUG
         qDebug() << "In CPU";
 #endif
         break;
     case SENSOR1:
         prevValue = itsPrevSensor1Temp;
+        wasPrev = itsWasPrevSensor1Temp;
 #ifdef DEBUG
         qDebug() << "In SENSOR1";
 #endif
         break;
     case SENSOR2:
         prevValue = itsPrevSensor2Temp;
+        wasPrev = itsWasPrevSensor2Temp;
 #ifdef DEBUG
         qDebug() << "In SENSOR2";
 #endif
         break;
     default:
         prevValue = itsPrevCPUTemp;
+        wasPrev = itsWasPrevCPUTemp;
         break;
     }
 
-    if(prevValue) {
+    if(wasPrev) {
         prevValue = prevValue*(1 - ACCURACY) + temp*ACCURACY;
     } else {
         prevValue = temp;
@@ -376,24 +387,28 @@ float Dialog::tempCorr(float temp, SENSORS sensor)
     switch (sensor) {
     case CPU:
         itsPrevCPUTemp = prevValue;
+        itsWasPrevCPUTemp = true;
 #ifdef DEBUG
         qDebug() << "Out CPU";
 #endif
         break;
     case SENSOR1:
         itsPrevSensor1Temp = prevValue;
+        itsWasPrevSensor1Temp = true;
 #ifdef DEBUG
         qDebug() << "Out SENSOR1";
 #endif
         break;
     case SENSOR2:
         itsPrevSensor2Temp = prevValue;
+        itsWasPrevSensor2Temp = true;
 #ifdef DEBUG
         qDebug() << "Out SENSOR2";
 #endif
         break;
     default:
         itsPrevCPUTemp = prevValue;
+        itsWasPrevCPUTemp = true;
         break;
     }
 

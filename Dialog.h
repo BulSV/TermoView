@@ -47,6 +47,10 @@ class Dialog : public QDialog
     float itsPrevSensor1Temp;
     float itsPrevSensor2Temp;
 
+    bool itsWasPrevCPUTemp;
+    bool itsWasPrevSensor1Temp;
+    bool itsWasPrevSensor2Temp;
+
     QStringList itsTempSensorsList;
 
     // преобразует word в byte
