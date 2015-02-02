@@ -233,7 +233,7 @@ void Dialog::received(QByteArray ba)
         if(sensor != static_cast<int>(CPU)) {
             tempStr = QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))), static_cast<SENSORS>(sensor)), FORMAT, PRECISION);
         } else {
-            tempStr = QString::number(tempCorr(tempCPU(wordToInt(ba.mid(i, 2))), CPU), FORMAT, PRECISION);
+            tempStr = QString::number(tempCPU(wordToInt(ba.mid(i, 2)), CPU), FORMAT, PRECISION);
         }
         if(list.at(k)->digitCount() < addTrailingZeros(tempStr, PRECISION).size())
         {
