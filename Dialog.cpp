@@ -48,7 +48,8 @@ Dialog::Dialog(QWidget *parent) :
         itsPrevSensor1Temp(0.0),
         itsPrevSensor2Temp(0.0),
         itsTray (new QSystemTrayIcon(QPixmap(":/Termo.png"), this)),
-        itsBlinkTime(new QTimer(this)),
+        itsBlinkTimeNone(new QTimer(this)),
+        itsBlinkTimeColor(new QTimer(this)),
         itsTimeToDisplay(new QTimer(this))
 {
     setLayout(new QVBoxLayout(this));
@@ -119,7 +120,8 @@ Dialog::Dialog(QWidget *parent) :
     bPortStop->setEnabled(false);
 
     itsTray->setVisible(true);
-    itsBlinkTime->setInterval(500);
+    itsBlinkTimeNone->setInterval(500);
+    itsBlinkTimeColor->setInterval(500);
     itsTimeToDisplay->setInterval(500);
 
     QList<QLCDNumber*> list;
@@ -136,7 +138,8 @@ Dialog::Dialog(QWidget *parent) :
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(cbBaud, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(itsOnePacket, SIGNAL(ReadedData(QByteArray)), this, SLOT(received(QByteArray)));
-    connect(itsBlinkTime, SIGNAL(timeout()), this, SLOT(blinkRx()));
+    connect(itsBlinkTimeColor, SIGNAL(timeout()), this, SLOT(colorIsRx()));
+    connect(itsBlinkTimeNone, SIGNAL(timeout()), this, SLOT(colorNoneRx()));
     connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(display()));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
@@ -202,7 +205,8 @@ void Dialog::openPort()
 void Dialog::closePort()
 {
     itsPort->close();
-    itsBlinkTime->stop();
+    itsBlinkTimeNone->stop();
+    itsBlinkTimeColor->stop();
     lRx->setStyleSheet("background: red; font: bold; font-size: 10pt");
     bPortStop->setEnabled(false);
     bPortStart->setEnabled(true);
@@ -224,9 +228,9 @@ void Dialog::received(QByteArray ba)
         return;
     }
 
-    lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
-    if(!itsBlinkTime->isActive()) {
-        itsBlinkTime->start();
+    if(!itsBlinkTimeColor->isActive() && !itsBlinkTimeNone->isActive()) {
+        itsBlinkTimeColor->start();
+        lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
     }
 
     if(!itsTimeToDisplay->isActive()) {
@@ -441,10 +445,16 @@ QString &Dialog::addTrailingZeros(QString &str, int prec)
     return str;
 }
 
-void Dialog::blinkRx()
+void Dialog::colorIsRx()
 {
     lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
-    itsBlinkTime->stop();
+    itsBlinkTimeColor->stop();
+    itsBlinkTimeNone->start();
+}
+
+void Dialog::colorNoneRx()
+{
+    itsBlinkTimeNone->stop();
 }
 
 void Dialog::display()

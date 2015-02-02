@@ -71,7 +71,8 @@ class Dialog : public QDialog
     QString &addTrailingZeros(QString &str, int prec);
 
     QSystemTrayIcon *itsTray;
-    QTimer *itsBlinkTime;
+    QTimer *itsBlinkTimeNone;
+    QTimer *itsBlinkTimeColor;
     QTimer *itsTimeToDisplay;
 
 private slots:
@@ -80,7 +81,8 @@ private slots:
     void cbPortChanged();
     void received(QByteArray ba);
     // мигание надписи "Rx" при получении пакета
-    void blinkRx();
+    void colorNoneRx();
+    void colorIsRx();
     void display();
 
 public:
