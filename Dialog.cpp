@@ -27,6 +27,9 @@
 #define FORMAT 'f'
 #define PRECISION 2
 
+#define BLINKTIME 500 // ms
+#define DISPLAYTIME 100 // ms
+
 Dialog::Dialog(QWidget *parent) :
         QDialog(parent),
         lPort(new QLabel(QString::fromUtf8("Port"), this)),
@@ -123,9 +126,9 @@ Dialog::Dialog(QWidget *parent) :
     bPortStop->setEnabled(false);
 
     itsTray->setVisible(true);
-    itsBlinkTimeNone->setInterval(500);
-    itsBlinkTimeColor->setInterval(500);
-    itsTimeToDisplay->setInterval(500);
+    itsBlinkTimeNone->setInterval(BLINKTIME);
+    itsBlinkTimeColor->setInterval(BLINKTIME);
+    itsTimeToDisplay->setInterval(DISPLAYTIME);
 
     QList<QLCDNumber*> list;
     list << lcdCPUTermo << lcdSensor1Termo << lcdSensor2Termo;
