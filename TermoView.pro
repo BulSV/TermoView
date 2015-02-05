@@ -45,4 +45,5 @@ SOURCES += \
 
 HEADERS += \
     Dialog.h \
-    ComPort.h
+    ComPort.h \
+    IProtocol.h

@@ -248,9 +248,13 @@ void Dialog::received(QByteArray ba)
 
     for(int i = 1, sensor = static_cast<int>(CPU); i < BYTESLENTH - 1; i += 2, ++sensor) {
         if(sensor != static_cast<int>(CPU)) {
-            itsTempSensorsList.append(QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))), static_cast<SENSORS>(sensor)), FORMAT, PRECISION));
+            itsTempSensorsList.append(QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))),
+                                                               static_cast<SENSORS>(sensor)),
+                                                      FORMAT, PRECISION));
         } else {
-            itsTempSensorsList.append(QString::number(tempCorr(tempCPU(wordToInt(ba.mid(i, 2))), CPU), FORMAT, PRECISION));
+            itsTempSensorsList.append(QString::number(tempCorr(tempCPU(wordToInt(ba.mid(i, 2))),
+                                                               CPU),
+                                                      FORMAT, PRECISION));
         }
     }
 }
