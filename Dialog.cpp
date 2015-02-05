@@ -112,12 +112,16 @@ Dialog::Dialog(QWidget *parent) :
     }
 
     cbPort->addItems(portsNames);
+#if defined (Q_OS_LINUX)
+    cbPort->setEditable(true); // TODO Make correct viewing available ports in Linux
+#else
     cbPort->setEditable(false);
+#endif
 
     QStringList portsBauds;
     portsBauds << "115200" << "57600" << "38400";
     cbBaud->addItems(portsBauds);
-    cbPort->setEditable(false);
+    cbBaud->setEditable(false);
     bPortStop->setEnabled(false);
 
     itsTray->setVisible(true);
