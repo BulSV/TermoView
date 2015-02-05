@@ -27,7 +27,7 @@ ReadSensorProtocol::ReadSensorProtocol(ComPort *comPort, QObject *parent) :
     itsWasPrevSensor1Temp(false),
     itsWasPrevSensor2Temp(false)
 {
-    connect(itsComPort, SIGNAL(DataIsReaded(bool)), this, SLOT(readData()));
+    connect(itsComPort, SIGNAL(DataIsReaded(bool)), this, SLOT(readData(bool)));
 }
 
 void ReadSensorProtocol::setDataToWrite(const QMultiMap<QString, QString> &data)
@@ -39,27 +39,44 @@ QMultiMap<QString, QString> ReadSensorProtocol::getReadedData() const
     return itsReadData;
 }
 
-void ReadSensorProtocol::readData()
+void ReadSensorProtocol::readData(bool isReaded)
 {
-    QByteArray ba;
+    itsReadData.clear();
 
-    ba = itsComPort->getReadData();
+    if(isReaded) {
+        QByteArray ba;
 
-    for(int i = 1, sensor = static_cast<int>(ReadSensorProtocol::CPU); i < BYTESLENTH - 1; i += 2, ++sensor) {
-        if(sensor != static_cast<int>(ReadSensorProtocol::CPU)) {
-            itsReadData.insert(sensorToString(sensor), QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))),
-                                                               static_cast<ReadSensorProtocol::SENSORS>(sensor)),
-                                                      FORMAT, PRECISION));
-        } else {
-            itsReadData.insert(sensorToString(sensor), QString::number(tempCorr(tempCPU(wordToInt(ba.mid(i, 2))),
-                                                               ReadSensorProtocol::CPU),
-                                                      FORMAT, PRECISION));
+        ba = itsComPort->getReadData();
+
+        for(int i = 1, sensor = static_cast<int>(ReadSensorProtocol::CPU); i < BYTESLENTH - 1; i += 2, ++sensor) {
+            if(sensor != static_cast<int>(ReadSensorProtocol::CPU)) {
+                itsReadData.insert(sensorToString(static_cast<ReadSensorProtocol::SENSORS>(sensor)),
+                                   QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))),
+                                                            static_cast<ReadSensorProtocol::SENSORS>(sensor)),
+                                                   FORMAT, PRECISION));
+            } else {
+                itsReadData.insert(sensorToString(static_cast<ReadSensorProtocol::SENSORS>(sensor)),
+                                   QString::number(tempCorr(tempCPU(wordToInt(ba.mid(i, 2))),
+                                                            ReadSensorProtocol::CPU),
+                                                   FORMAT, PRECISION));
+            }
         }
+
+        emit DataIsReaded(true);
+    } else {
+        emit DataIsReaded(false);
     }
 }
 
 void ReadSensorProtocol::writeData()
 {
+}
+
+void ReadSensorProtocol::resetReading()
+{
+    itsWasPrevCPUTemp = false;
+    itsWasPrevSensor1Temp = false;
+    itsWasPrevSensor2Temp = false;
 }
 
 // преобразует word в byte
@@ -157,7 +174,7 @@ float ReadSensorProtocol::tempCorr(float temp, ReadSensorProtocol::SENSORS senso
     return prevValue;
 }
 
-QString ReadSensorProtocol::sensorToString(const ReadSensorProtocol::SENSORS &sensor)
+QString ReadSensorProtocol::sensorToString(ReadSensorProtocol::SENSORS sensor)
 {
     switch (sensor) {
     case CPU:

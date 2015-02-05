@@ -16,13 +16,12 @@
 #include <QTimer>
 #include <QLCDNumber>
 #include "ComPort.h"
+#include "IProtocol.h"
+#include "ReadSensorProtocol.h"
 
 class Dialog : public QDialog
 {
     Q_OBJECT
-    enum SENSORS {
-        CPU, SENSOR1, SENSOR2
-    };
 
     QLabel *lPort;
     QComboBox *cbPort;
@@ -42,33 +41,10 @@ class Dialog : public QDialog
 
     QSerialPort *itsPort;
     ComPort *itsComPort;
-
-    float itsPrevCPUTemp;
-    float itsPrevSensor1Temp;
-    float itsPrevSensor2Temp;
-
-    bool itsWasPrevCPUTemp;
-    bool itsWasPrevSensor1Temp;
-    bool itsWasPrevSensor2Temp;
+    IProtocol *itsSensorProtocol;
 
     QStringList itsTempSensorsList;
 
-    // преобразует word в byte
-    int wordToInt(QByteArray ba);
-    // преобразование byte в word
-    QByteArray toWord(int nInt);
-    // меняет байты местами
-    void swapBytes(QByteArray &ba);
-    // Преобразует hex вида 000000 в 00 00 00
-    QString toHumanHex(QByteArray ba);
-    // Преобразует милисекунды в секунды
-    QString mSecToSec(int time);
-    // определяет температуру
-    float tempSensors(int temp);
-    // определяет температуру кристалла
-    float tempCPU(int temp);
-    // коррекция скачков температуры
-    float tempCorr(float temp, SENSORS sensor);
     // цвет индикации температуры >0 & <=0
     void setColorLCD(QLCDNumber *lcd, bool isHeat);
     // добавляет завершающие нули
@@ -83,12 +59,13 @@ private slots:
     void openPort();
     void closePort();
     void cbPortChanged();
-    void received(QByteArray ba);
+    void received(bool isReceived);
     // мигание надписи "Rx" при получении пакета
     void colorNoneRx();
     void colorIsRx();
     void display();
-
+signals:
+    void ResetReadSensors();
 public:
     explicit Dialog(QWidget *parent = 0);
     ~Dialog();

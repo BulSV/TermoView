@@ -14,8 +14,10 @@ public:
 signals:
 
 public slots:
-    virtual void readData();
+    virtual void readData(bool isReaded);
     virtual void writeData();
+private slots:
+    void resetReading(); // TODO link with Dialog?
 private:
     ComPort *itsComPort;
 
@@ -43,7 +45,7 @@ private:
     // коррекция скачков температуры
     float tempCorr(float temp, SENSORS sensor);
     // преобразует enum SENSORS в строку
-    QString sensorToString(const SENSORS &sensor);
+    QString sensorToString(SENSORS sensor);
 };
 
 #endif // READSENSORPROTOCOL_H

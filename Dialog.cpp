@@ -47,12 +47,7 @@ Dialog::Dialog(QWidget *parent) :
         gbSensor2(new QGroupBox(QString::fromUtf8("Sensor 2"), this)),
         itsPort(new QSerialPort(this)),
         itsComPort(new ComPort(itsPort, ComPort::READ, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
-        itsPrevCPUTemp(0.0),
-        itsPrevSensor1Temp(0.0),
-        itsPrevSensor2Temp(0.0),
-        itsWasPrevCPUTemp(false),
-        itsWasPrevSensor1Temp(false),
-        itsWasPrevSensor2Temp(false),
+        itsSensorProtocol(new ReadSensorProtocol(itsComPort, this)),
         itsTray (new QSystemTrayIcon(QPixmap(":/Termo.png"), this)),
         itsBlinkTimeNone(new QTimer(this)),
         itsBlinkTimeColor(new QTimer(this)),
@@ -143,7 +138,7 @@ Dialog::Dialog(QWidget *parent) :
     connect(bPortStop, SIGNAL(clicked()), this, SLOT(closePort()));
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(cbBaud, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
-    connect(itsComPort, SIGNAL(ReadedData(QByteArray)), this, SLOT(received(QByteArray)));
+    connect(itsSensorProtocol, SIGNAL(DataIsReaded(bool)), this, SLOT(received(bool)));
     connect(itsBlinkTimeColor, SIGNAL(timeout()), this, SLOT(colorIsRx()));
     connect(itsBlinkTimeNone, SIGNAL(timeout()), this, SLOT(colorNoneRx()));
     connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(display()));
@@ -198,6 +193,7 @@ void Dialog::openPort()
                              QString(QString::number(itsPort->parity())));
         bPortStart->setEnabled(false);
         bPortStop->setEnabled(true);
+        lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
     }
     else
     {
@@ -205,6 +201,7 @@ void Dialog::openPort()
                              QString::fromUtf8("Error opening port: ") +
                              QString(itsPort->portName()),
                              QSystemTrayIcon::Critical);
+        lRx->setStyleSheet("background: red; font: bold; font-size: 10pt");
     }
 }
 
@@ -216,9 +213,7 @@ void Dialog::closePort()
     lRx->setStyleSheet("background: red; font: bold; font-size: 10pt");
     bPortStop->setEnabled(false);
     bPortStart->setEnabled(true);
-    itsWasPrevCPUTemp = false;
-    itsWasPrevSensor1Temp = false;
-    itsWasPrevSensor2Temp = false;
+    emit ResetReadSensors();
 }
 
 void Dialog::cbPortChanged()
@@ -227,199 +222,23 @@ void Dialog::cbPortChanged()
     bPortStop->setEnabled(false);
 }
 
-void Dialog::received(QByteArray ba)
+void Dialog::received(bool isReceived)
 {
-#ifdef DEBUG
-        qDebug() << "void Dialog::received(QByteArray ba) ||| ba =" << ba.toHex();
-        qDebug() << "void Dialog::received(QByteArray ba) ||| ba.size():" << ba.size();
-#endif
-    if(ba.size() > BYTESLENTH) { // ignore packets that don't match the size of the established protocol
-        return;
-    }
+    if(isReceived) {
+        if(!itsBlinkTimeColor->isActive() && !itsBlinkTimeNone->isActive()) {
+            itsBlinkTimeColor->start();
+            lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
+        }
 
-    if(!itsBlinkTimeColor->isActive() && !itsBlinkTimeNone->isActive()) {
-        itsBlinkTimeColor->start();
-        lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
-    }
+        if(!itsTimeToDisplay->isActive()) {
+            itsTimeToDisplay->start();
+        }
 
-    if(!itsTimeToDisplay->isActive()) {
-        itsTimeToDisplay->start();
-    }
-
-    for(int i = 1, sensor = static_cast<int>(CPU); i < BYTESLENTH - 1; i += 2, ++sensor) {
-        if(sensor != static_cast<int>(CPU)) {
-            itsTempSensorsList.append(QString::number(tempCorr(tempSensors(wordToInt(ba.mid(i, 2))),
-                                                               static_cast<SENSORS>(sensor)),
-                                                      FORMAT, PRECISION));
-        } else {
-            itsTempSensorsList.append(QString::number(tempCorr(tempCPU(wordToInt(ba.mid(i, 2))),
-                                                               CPU),
-                                                      FORMAT, PRECISION));
+        QList<QString> strKeysList = itsSensorProtocol->getReadedData().keys();
+        for(int i = 0; i < itsSensorProtocol->getReadedData().size(); ++i) {
+            itsTempSensorsList.append(itsSensorProtocol->getReadedData().value(strKeysList.at(i)));
         }
     }
-}
-
-// преобразует word в byte
-int Dialog::wordToInt(QByteArray ba)
-{
-    if(ba.size() != 2)
-        return -1;
-
-    int temp = ba[0];
-    if(temp < 0)
-    {
-        temp += 0x100; // 256;
-        temp *= 0x100;
-    }
-    else
-        temp = ba[0]*0x100; // старший байт
-
-    int i = ba[1];
-    if(i < 0)
-    {
-        i += 0x100; // 256;
-        temp += i;
-    }
-    else
-        temp += ba[1]; // младший байт
-
-    return temp;
-}
-
-// преобразование byte в word
-QByteArray Dialog::toWord(int nInt)
-{
-    QByteArray ba;
-    ba.resize(2);   //можно не писать!
-    ba[0]=nInt%256; // младший байт
-    ba[1]=nInt/256; // старший байт
-    swapBytes(ba);  // если необходимо! Или можно поменять местами
-    // индексы в двух верхних строчках
-
-    return ba;
-}
-
-// меняет байты местами
-void Dialog::swapBytes(QByteArray &ba)
-{
-    QByteArray temp;
-    temp.resize(1); // можно не писать!
-    temp[0]=ba[0];
-    ba[0]=ba[1];
-    ba[1]=temp[0];
-}
-
-// Преобразует hex вида 000000 в 00 00 00
-QString Dialog::toHumanHex(QByteArray ba)
-{
-    QString str(' ');
-    QByteArray baHex;
-    baHex = ba.toHex().toUpper();
-    for(int i = 0; i < baHex.size(); ++i)
-    {
-        if(i % 2)
-            str = str + QString(baHex.at(i)) + ' ';
-        else
-            str = str + QString(baHex.at(i));
-    }
-    str.remove(0, 1);
-    return str;
-}
-
-// Преобразует милисекунды в секунды
-QString Dialog::mSecToSec(int time)
-{
-    int timeSec = time / 1000;
-    int timeMSec = time % 1000;
-    return (QString::number(timeSec) +
-            QString::fromUtf8(".") +
-            QString::number(timeMSec));
-}
-
-// определяет температуру
-float Dialog::tempSensors(int temp)
-{
-    if(temp & NEGATIVE) {
-        return -static_cast<float>(qAbs(temp - OFFSET))/SLOPE;
-    } else {
-        return static_cast<float>(temp)/SLOPE;
-    }
-}
-
-// определяет температуру кристалла
-float Dialog::tempCPU(int temp)
-{
-    return (static_cast<float>(temp*CPU_FACTOR - CPU_OFFSET))/CPU_SLOPE;
-}
-
-float Dialog::tempCorr(float temp, SENSORS sensor)
-{
-    float prevValue = 0.0;
-    bool wasPrev = false;
-
-    switch (sensor) {
-    case CPU:
-        prevValue = itsPrevCPUTemp;
-        wasPrev = itsWasPrevCPUTemp;
-#ifdef DEBUG
-        qDebug() << "In CPU";
-#endif
-        break;
-    case SENSOR1:
-        prevValue = itsPrevSensor1Temp;
-        wasPrev = itsWasPrevSensor1Temp;
-#ifdef DEBUG
-        qDebug() << "In SENSOR1";
-#endif
-        break;
-    case SENSOR2:
-        prevValue = itsPrevSensor2Temp;
-        wasPrev = itsWasPrevSensor2Temp;
-#ifdef DEBUG
-        qDebug() << "In SENSOR2";
-#endif
-        break;
-    default:
-        prevValue = itsPrevCPUTemp;
-        wasPrev = itsWasPrevCPUTemp;
-        break;
-    }
-
-    if(wasPrev) {
-        prevValue = prevValue*(1 - ACCURACY) + temp*ACCURACY;
-    } else {
-        prevValue = temp;
-    }
-
-    switch (sensor) {
-    case CPU:
-        itsPrevCPUTemp = prevValue;
-        itsWasPrevCPUTemp = true;
-#ifdef DEBUG
-        qDebug() << "Out CPU";
-#endif
-        break;
-    case SENSOR1:
-        itsPrevSensor1Temp = prevValue;
-        itsWasPrevSensor1Temp = true;
-#ifdef DEBUG
-        qDebug() << "Out SENSOR1";
-#endif
-        break;
-    case SENSOR2:
-        itsPrevSensor2Temp = prevValue;
-        itsWasPrevSensor2Temp = true;
-#ifdef DEBUG
-        qDebug() << "Out SENSOR2";
-#endif
-        break;
-    default:
-        itsPrevCPUTemp = prevValue;
-        itsWasPrevCPUTemp = true;
-        break;
-    }
-
-    return prevValue;
 }
 
 void Dialog::setColorLCD(QLCDNumber *lcd, bool isHeat)
