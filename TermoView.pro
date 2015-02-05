@@ -41,9 +41,11 @@ RESOURCES += TermoViewIcon.qrc
 SOURCES += \
     main.cpp \
     Dialog.cpp \
-    ComPort.cpp
+    ComPort.cpp \
+    ReadSensorProtocol.cpp
 
 HEADERS += \
     Dialog.h \
     ComPort.h \
-    IProtocol.h
+    IProtocol.h \
+    ReadSensorProtocol.h
