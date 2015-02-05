@@ -41,8 +41,8 @@ RESOURCES += TermoViewIcon.qrc
 SOURCES += \
     main.cpp \
     Dialog.cpp \
-    OnePacket.cpp
+    ComPort.cpp
 
 HEADERS += \
     Dialog.h \
-    OnePacket.h
+    ComPort.h

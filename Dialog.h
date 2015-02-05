@@ -15,7 +15,7 @@
 #include <QSystemTrayIcon>
 #include <QTimer>
 #include <QLCDNumber>
-#include "OnePacket.h"
+#include "ComPort.h"
 
 class Dialog : public QDialog
 {
@@ -41,7 +41,7 @@ class Dialog : public QDialog
     QGroupBox *gbSensor2;
 
     QSerialPort *itsPort;
-    OnePacket *itsOnePacket;
+    ComPort *itsComPort;
 
     float itsPrevCPUTemp;
     float itsPrevSensor1Temp;

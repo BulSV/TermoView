@@ -46,7 +46,7 @@ Dialog::Dialog(QWidget *parent) :
         gbSensor1(new QGroupBox(QString::fromUtf8("Sensor 1"), this)),
         gbSensor2(new QGroupBox(QString::fromUtf8("Sensor 2"), this)),
         itsPort(new QSerialPort(this)),
-        itsOnePacket(new OnePacket(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
+        itsComPort(new ComPort(itsPort, ComPort::READ, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
         itsPrevCPUTemp(0.0),
         itsPrevSensor1Temp(0.0),
         itsPrevSensor2Temp(0.0),
@@ -143,7 +143,7 @@ Dialog::Dialog(QWidget *parent) :
     connect(bPortStop, SIGNAL(clicked()), this, SLOT(closePort()));
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
     connect(cbBaud, SIGNAL(currentIndexChanged(int)), this, SLOT(cbPortChanged()));
-    connect(itsOnePacket, SIGNAL(ReadedData(QByteArray)), this, SLOT(received(QByteArray)));
+    connect(itsComPort, SIGNAL(ReadedData(QByteArray)), this, SLOT(received(QByteArray)));
     connect(itsBlinkTimeColor, SIGNAL(timeout()), this, SLOT(colorIsRx()));
     connect(itsBlinkTimeNone, SIGNAL(timeout()), this, SLOT(colorNoneRx()));
     connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(display()));
