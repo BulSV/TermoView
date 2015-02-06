@@ -46,8 +46,8 @@ Dialog::Dialog(QWidget *parent) :
         gbSensor1(new QGroupBox(QString::fromUtf8("Sensor 1"), this)),
         gbSensor2(new QGroupBox(QString::fromUtf8("Sensor 2"), this)),
         itsPort(new QSerialPort(this)),
-        itsComPort(new ComPort(itsPort, ComPort::READ, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
-        itsSensorProtocol(new ReadSensorProtocol(itsComPort, this)),
+        itsComPortReadSensors(new ComPort(itsPort, ComPort::READ, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
+        itsSensorProtocol(new ReadSensorProtocol(itsComPortReadSensors, this)),
         itsTray (new QSystemTrayIcon(QPixmap(":/Termo.png"), this)),
         itsBlinkTimeNone(new QTimer(this)),
         itsBlinkTimeColor(new QTimer(this)),
@@ -217,7 +217,7 @@ void Dialog::closePort()
     lRx->setStyleSheet("background: red; font: bold; font-size: 10pt");
     bPortStop->setEnabled(false);
     bPortStart->setEnabled(true);
-    emit ResetReadSensors();
+    itsSensorProtocol->resetProtocol();
 }
 
 void Dialog::cbPortChanged()

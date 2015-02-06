@@ -14,10 +14,10 @@ public:
 signals:
 
 public slots:
-    virtual void readData(bool isReaded);
     virtual void writeData();
+    virtual void resetProtocol();
 private slots:
-    void resetReading(); // TODO link with Dialog?
+    void readData(bool isReaded);
 private:
     ComPort *itsComPort;
 

@@ -40,7 +40,7 @@ class Dialog : public QDialog
     QGroupBox *gbSensor2;
 
     QSerialPort *itsPort;
-    ComPort *itsComPort;
+    ComPort *itsComPortReadSensors;
     IProtocol *itsSensorProtocol;
 
     QStringList itsTempSensorsList;
@@ -64,8 +64,6 @@ private slots:
     void colorNoneRx();
     void colorIsRx();
     void display();
-signals:
-    void ResetReadSensors();
 public:
     explicit Dialog(QWidget *parent = 0);
     ~Dialog();

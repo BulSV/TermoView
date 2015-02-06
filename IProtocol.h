@@ -4,7 +4,6 @@
 #include <QObject>
 #include <QMultiMap>
 #include <QString>
-#include <QByteArray>
 
 class IProtocol : public QObject
 {
@@ -15,8 +14,8 @@ public:
     virtual void setDataToWrite(const QMultiMap<QString, QString> &data) = 0;
     virtual QMultiMap<QString, QString> getReadedData() const = 0;
 public slots:
-    virtual void readData(bool isReaded) = 0;
     virtual void writeData() = 0;
+    virtual void resetProtocol() = 0;
 signals:
     void DataIsReaded(bool);
     void DataIsWrited(bool);

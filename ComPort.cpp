@@ -29,39 +29,20 @@ ComPort::ComPort(QSerialPort *port,
 void ComPort::readData()
 {
     if(itsComMode != WRITE) {
-#ifdef DEBUG
-        qDebug() << "[void OnePacket::readData()] ||| itsPort->bytesAvailable():" << itsPort->bytesAvailable();
-        qDebug() << "[void OnePacket::readData()] ||| ba.size():" << itsReadData.size();
-#endif
         QByteArray buffer;
 
         if(itsPort->bytesAvailable() > 0) {
             buffer.append(itsPort->read(1));
 
-#ifdef DEBUG
-            qDebug() << "buffer =" << buffer.toHex();
-            qDebug() << "ba =" << itsReadData.toHex();
-            qDebug() << "ba.size():" << itsReadData.size();
-#endif
             if(!m_counter && buffer.at(0) == static_cast<char>(itsStartByte)) {
-#ifdef DEBUG
-                qDebug() << "BEGIN";
-#endif
                 itsReadData.append(buffer);
                 ++m_counter;
             } else if(m_counter && m_counter < itsPacketLenght) {
-#ifdef DEBUG
-                qDebug() << "CONTINUE";
-#endif
                 itsReadData.append(buffer);
                 ++m_counter;
 
                 if((m_counter == itsPacketLenght)
                         && itsReadData.at(itsPacketLenght - 1) == static_cast<char>(itsStopByte)) {
-#ifdef DEBUG
-                    qDebug() << "emit ReadedData(ba):" << itsReadData.toHex();
-                    qDebug() << "RECEIVED";
-#endif
                     emit DataIsReaded(true);
                     emit ReadedData(itsReadData);
 

@@ -72,7 +72,7 @@ void ReadSensorProtocol::writeData()
 {
 }
 
-void ReadSensorProtocol::resetReading()
+void ReadSensorProtocol::resetProtocol()
 {
     itsWasPrevCPUTemp = false;
     itsWasPrevSensor1Temp = false;
