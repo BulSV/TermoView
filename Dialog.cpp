@@ -282,7 +282,8 @@ QString &Dialog::addTrailingZeros(QString &str, int prec)
     }
 
     if(str.size() - 1 - pointIndex < prec) {
-        for(int i = 0; i < prec - (str.size() - 1 - pointIndex); ++i) {
+        int size = str.size();
+        for(int i = 0; i < prec - (size - 1 - pointIndex); ++i) {
             str.append("0");
         }
     }
